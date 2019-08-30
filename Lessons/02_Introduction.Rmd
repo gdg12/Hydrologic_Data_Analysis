@@ -18,6 +18,16 @@ What makes an effective data visualization? What are the essential components/ch
 
 Come up with a consensus list among your group members. 
 
+Units for measurements
+Appropriatelty sized axes to fit all of the data points
+Labeled axes
+Acessible color palettes (color blindness)
+Type of graph should represent data properly
+Reproducibility
+Legible font sizes
+Axis scale
+
+
 Compare your list to other groups' lists. 
 
 ## Exploring web resources for visualization
@@ -25,7 +35,7 @@ Compare your list to other groups' lists.
 1. Navigate to https://www.data-to-viz.com/.
 2. Think of a dataset that you or someone in your field might want to visualize. What types of variables does this dataset contain? What information might you want to convey with a visualization?
 
-<add notes here>
+<putting text in between carets will not show up in your final knitted document>
 
 3. Scroll to the "Explore" section of the website. Follow the flow chart to find a type of graph that would suit your data. Click for more information and a link to the R Graph Gallery. If there are multiple options for graphing your data, how might you choose between them?
 
@@ -74,17 +84,18 @@ pal_futurama (function; comes in the ggsci package)
 
 ```{r}
 getwd()
+setwd("~/Desktop/Hydrologic Data Analysis/Hydrologic_Data_Analysis")
 
-#install.packages(tidyverse)
-#install.packages(dataRetrieval)
-#install.packages(zoo)
-#install.packages(ggrepel)
-
-library(tidyverse)
-library(dataRetrieval)
-library(zoo)
-library(ggrepel)
 ```
+
+```{r}
+install.packages(tidyverse)
+install.packages(dataRetrieval)
+install.packages(zoo)
+install.packages(ggrepel)
+
+```
+
 
 ## Data Visualization Challenge
 
@@ -99,46 +110,97 @@ EnoDischarge <- readNWISdv(siteNumbers = "02096500",
                      startDate = "2009-08-01",
                      endDate = "2019-07-31")
 
+
+
+```
 # Look at the data frame in your Environment tab.
 
 # Renaming columns (one method of multiple)
+```{r}
 names(EnoDischarge)[4:5] <- c("Discharge", "Approval.Code")
+```
+
+
 
 # dataRetrieval also includes attribute information
+```{r}
 attr(EnoDischarge, "variableInfo")
   # note: imperial, not metric
 attr(EnoDischarge, "siteInfo")
+```
+
+
   
 # Build a ggplot
+```{r}
 EnoPlot <- 
   ggplot(EnoDischarge, aes(x = Date, y = Discharge)) +
          geom_line() +
          xlab("Year")
 print(EnoPlot)
+
 ```
+
+
 
 Challenge: 
 
 1. Build a plot called EnoPlot2.
+```{r}
+EnoPlot2 <- 
+  ggplot(EnoDischarge, aes(x = Date, y = Discharge)) +
+         geom_line() +
+         xlab("Year")
+print(EnoPlot2)
+```
+
 
 2. Add a column to your data frame for discharge in meters cubed per second
 
 hint: package dplyr in tidyverse includes a `mutate` function
 
+
+```{r}
+EnoDischargeFinal <- mutate(EnoDischarge, Discharge_meters_cubed_second = Discharge/35.31)
+```
+
 3. Add a column in your data frame for a 30-day rolling mean of the metric discharge
+###Calculate mean for first thirty days, 
+```{r}
+
+```
 
 hint: package dplyr in tidyverse includes a `mutate` function
 hint: package zoo includes a `rollmean` function
 
 4. Update your ggplot theme
+```{r}
+gabytheme <- theme_bw(base_size = 14) + 
+  theme(plot.title=element_text(face="bold", size="16", color="tomato2", hjust=0.5),
+        axis.title=element_text(face="bold.italic", size=11, color="black"),
+axis.text = element_text(face="bold", size=10, color = "black"), 
+panel.background=element_rect(fill="lightgray", color="darkblue"), 
+panel.border = element_rect(color = "black", size = 2),
+legend.position = "top", legend.background = element_rect(fill="white", color="black"),
+            legend.key = element_rect(fill="transparent", color="NA"))
+```
 
 hint: https://ggplot2.tidyverse.org/reference/ggtheme.html
 
 5. Edit axes
+```{r}
+
+```
 
 6. Create two geom_line aesthetics, one for metric discharge and one for rolling mean of metric discharge. Color these differently.
+```{r}
+
+```
 
 7. Label the day that Hurricane Florence hit North Carolina. 
+```{r}
+
+```
 
 hint: look up this date
 hint: package ggrepel includes a `geom_label_repel` function
