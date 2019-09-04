@@ -1,10 +1,10 @@
 ---
 title: "Assignment 1: Introduction"
-author: "Student Name"
+author: Gaby Garcia
 output: pdf_document
 geometry: margin=2.54cm
 editor_options: 
-  chunk_output_type: console
+  chunk_output_type: inline
 ---
 
 ## OVERVIEW
@@ -23,45 +23,88 @@ The completed exercise is due on 2019-09-04 before class begins.
 ## Course Setup
 1. Post the link to your forked GitHub repository below. Your repo should include one or more commits and an edited README file.  
 
->  Link:
+>  https://github.com/gdg12/Hydrologic_Data_Analysis
 
 2. Complete the Consent Form in Sakai. You must choose to either opt in or out of the research study being conducted in our course.
 
 Did you complete the form? (yes/no)
 
-> 
+> Yes, I completed the form. 
 
 ## Course Project
 
 3. What are some topics in aquatic science that are particularly interesting to you?
 
-> ANSWER: 
+> ANSWER: Aquatic science is extremely interdisciplinary and there are many attractive topics. I'm extremely interested in honing my Master's Project study of hydrologic alterations to river and stream discharge, especially with the addition of insfrastructure development (specifically hydroelectric power). I'm also interested in environmental contaminant transport and its impact on water quality parameters such as dissolved oygen, conductivity, etc. 
 
 4. Are there specific people in class who you would specifically like to have on your team?
 
-> ANSWER: 
+> ANSWER: I am happy to have anyone on my team, but in the past I have worked well together with Felipe, Lindsay, Caroline, and Walker. 
 
 5. Are there specific people in class who you would specifically *not* like to have on your team?
 
-> ANSWER: 
+> ANSWER: No, everyone seems very smart and capable!
 
 ## Data Visualization Exercises
 
 6. Set up your work session. Check your working directory, load packages `tidyverse`,  `dataRetrieval`, and `lubridate`. Set your ggplot theme as theme_classic (you may need to look up how to set your theme).
 
-```{r, message = FALSE}
+```{r, message = FALSE, warning = FALSE}
+getwd()
+setwd("~/Desktop/Hydrologic Data Analysis/Hydrologic_Data_Analysis/Assignments")
+library(tidyverse)
+library(dataRetrieval)
+library(lubridate)
 
+
+gabytheme <- theme_classic(base_size = 16)+ 
+  theme(plot.title=element_text(face="bold", size="20", color="hotpink4", hjust=0.5),
+        axis.title=element_text(face="bold.italic", size="15", color="black"))
+theme_set(gabytheme)
 ```
 
 7. Upload discharge data for the Eno River at site 02096500 for the same dates as we studied in class (2009-08-01 through 2019-07-31). Obtain data for discharge and gage height (you will need to look up these parameter codes). Rename the columns with informative titles. Imperial units can be retained (no need to change to metric).
 
 ```{r}
+EnoDischargeAssignment1 <- readNWISdv(siteNumbers = "02096500",
+                     parameterCd = c("00060","00065"),
+                     startDate = "2009-08-01",
+                     endDate = "2019-07-31")
+```
+
+##Print Site Info
+```{r}
+siteNumbers <- c("02096500") 
+siteINFO <- readNWISsite(siteNumbers)
+print(siteINFO)
+```
+
+##Use names function to get the names of an object
+```{r}
+names(EnoDischargeAssignment1)
+```
+<approvalcode>
+##Information about the data frame attributes
+```{r}
+names(attributes(EnoDischargeAssignment1))
+```
+
+##The column names can be shortened and simplified using the renameNWISColumns function
+```{r}
+EnoDischargeAssignment1Final<-renameNWISColumns(EnoDischargeAssignment1, p00060="Discharge",
+                                                p_00060_00003_cd="Discharge_Qualification_Code",
+p00065="GageHeight")
 
 ```
 
 8. Add a "year" column to your data frame (hint: lubridate has a `year` function).
 
 ```{r}
+library(lubridate)
+EnoDischargeAssignment1Final$Date<-as.Date(EnoDischargeAssignment1Final$Date,
+                                           format="%m/%d/%y")
+EnoDischargeAssignment1Final<-mutate(EnoDischargeAssignment1Final, 
+                                     Year=year(Date))
 
 ```
 
@@ -70,23 +113,54 @@ Did you complete the form? (yes/no)
 * Edit axes with units
 * Change color palette from ggplot default
 * Make points 50 % transparent
+<Use scale_color_brewer for discrete variables>
+```{r, fig.height=8, fig.width=8, warning=FALSE}
+library(viridis)
+library(RColorBrewer)
+library(colormap)
+library(wesanderson)
+library(devtools)
 
-```{r}
+
+
+EnoDischargePlot<-ggplot(EnoDischargeAssignment1Final,
+                         aes(x =GageHeight, y =Discharge, color=Year)) +
+  geom_point(aes(x =GageHeight, y =Discharge), size=4, alpha=0.5)+
+  geom_smooth(method="lm", color="black",
+              SE=FALSE)+
+  labs(title="The Effect of Gage Height on Eno River Discharge",
+       x="Gage Height (feet)",
+       y="Discharge (ft^3/s)")+
+xlim(0, 24) +
+  scale_color_viridis(option = "magma")+
+  scale_y_continuous(breaks=c(0, 1000, 2000, 3000, 4000, 5000, 
+                              6000, 7000, 8000, 9000, 10000, 11000, 
+                              12000, 13000, 14000, 15000, 16000, 
+                              17000, 18000))
+  
+ print(EnoDischargePlot)
 
 ```
 
 10. Interpret the graph you made. Write 2-3 sentences communicating the main takeaway points. 
 
-> ANSWER: 
+> ANSWER: Gage height is the elevation of the water surface at the streamgaging station, while discharge is the volume of water moving down a stream or river per unit of time at the stream gage. There is a positive correlation (although it is not a linear relationship) between gage height and river discharge. 
 
 11. Create a ggplot violin plot of discharge, divided by year. (Hint: in your aesthetics, specify year as a factor rather than a continuous variable). Make the following edits to follow good data visualization practices: 
-
 * Remove x axis label
 * Add a horizontal line at the 0.5 quantile within each violin (hint: draw_quantiles)
-```{r}
-
+```{r, fig.width=10, warning=FALSE, message=FALSE}
+EnoDischargeViolin<-ggplot(EnoDischargeAssignment1Final, 
+                           aes(x =factor(Year), y =Discharge)) +
+  geom_violin(draw_quantiles = c(0.5),aes(fill=factor(Year))) +
+  labs(title="The Effect of Year on Eno River Discharge", y="Discharge (ft^3/s)")+ scale_y_continuous(breaks=c(0, 1000, 2000, 3000, 
+                              4000, 5000, 6000, 7000, 8000, 9000, 
+                              10000, 11000, 12000, 13000, 14000,
+                              15000, 16000, 17000, 18000))+
+  theme(axis.title.x = element_blank())
+print(EnoDischargeViolin)
 ```
 
 12. Interpret the graph you made. Write 2-3 sentences communicating the main takeaway points. 
 
-> ANSWER: 
+> ANSWER  Violin plots show the probability density of numeric data; the 0.5 quartile is the median. It appears the median discharges for all of the years have been similar and below 1000 ft^3/s. Where the violin plots is wide, there are a high density of points; where it is narrow, there are a low density of points. The year 2017 has the highest density of points with the least variability then the other years because most of the points are massed in the same region. 

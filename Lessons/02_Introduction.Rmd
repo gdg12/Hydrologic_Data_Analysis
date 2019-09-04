@@ -5,7 +5,7 @@ date: "Fall 2019"
 output: pdf_document
 geometry: margin=2.54cm
 editor_options: 
-  chunk_output_type: console
+  chunk_output_type: inline
 ---
 
 ## Lesson Objectives
@@ -126,8 +126,14 @@ names(EnoDischarge)[4:5] <- c("Discharge", "Approval.Code")
 ```{r}
 attr(EnoDischarge, "variableInfo")
   # note: imperial, not metric
+```
+
+
+```{r}
 attr(EnoDischarge, "siteInfo")
 ```
+
+
 
 
   
@@ -150,7 +156,7 @@ Challenge:
 EnoPlot2 <- 
   ggplot(EnoDischarge, aes(x = Date, y = Discharge)) +
          geom_line() +
-         xlab("Year")
+         xlab("Year")+gabytheme
 print(EnoPlot2)
 ```
 
@@ -189,17 +195,29 @@ hint: https://ggplot2.tidyverse.org/reference/ggtheme.html
 
 5. Edit axes
 ```{r}
+EnoPlot2 <- 
+  ggplot(EnoDischargeFinal, aes(x = Date, y = Discharge)) +
+         geom_line() +
+         xlab("Year")+gabytheme
+print(EnoPlot2)
 
 ```
 
 6. Create two geom_line aesthetics, one for metric discharge and one for rolling mean of metric discharge. Color these differently.
 ```{r}
-
+EnoPlot2 <- 
+  ggplot(EnoDischargeFinal, aes(x = Date, y = Discharge), color="blue") +
+         geom_line(aes(x=Date, y=Discharge_meters_cubed_second), color="pink") +
+          labs(title="Eno River Discharge Over Time")+
+         xlab("Year")+gabytheme
+print(EnoPlot2)
 ```
 
 7. Label the day that Hurricane Florence hit North Carolina. 
 ```{r}
 
+
+color="black", linetype=1, size=0.5
 ```
 
 hint: look up this date
