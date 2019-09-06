@@ -5,7 +5,7 @@ date: "Fall 2019"
 output: pdf_document
 geometry: margin=2.54cm
 editor_options: 
-  chunk_output_type: console
+  chunk_output_type: inline
 ---
 
 ## Lesson Objectives
@@ -15,22 +15,33 @@ editor_options:
 
 ## Opening Discussion
 What is a lake? How does this differ from a stream, river, or wetland?
+Lakes are bodies of water in a basin or depression. They are landlocked and by the ocean like lagoons. Flow is slow compared to rivers and streams. 
+Many wetlands have emergent vegetation from sediment surface to water surface. Lakes are too deep for emergent vegetation. 
+In the deepest part of a lake, you don't get light penetration all the way at the bottom. 
 
 What are the physical properties of lakes?
 
 ## Session Set Up
+
+getwd()
 ```{r, message = FALSE}
 # Check working directory (should be project file location)
-getwd()
 
+setwd("/Users/gabrielagarcia/Desktop/Hydrologic Data Analysis/Hydrologic_Data_Analysis/Data_Raw")
 # load packages
 library(tidyverse)
 library(lubridate)
 
+
+```
+
 # Load data
-NTLdata <- read.csv("./Data/Raw/NTL-LTER_Lake_ChemistryPhysics_Raw.csv")
+```{r}
+NTLdata <- read.csv("NTL-LTER_Lake_ChemistryPhysics_Raw.csv")
+```
 
 # set ggplot theme
+```{r}
 theme_set(theme_classic())
 ```
 
@@ -44,50 +55,102 @@ Common steps/checks for data wrangling:
 * Addressing NAs
 * Subsetting and filtering 
 
-```{r}
 # Is the date column perceived as a date by R?
+```{r}
 class(NTLdata$sampledate)
+```
+
+```{r}
+
 NTLdata$sampledate <- as.Date(NTLdata$sampledate, "%m/%d/%y")
+```
+
+```{r}
+
 class(NTLdata$sampledate)
+
+```
+###Do dates like the above format-year, month, day
+
+
 # What does this column look like now?
 
-# Remove rows that contain NAs in temperature column
+###Check dimensions
+```{r}
 dim(NTLdata)
+```
+
+
+###Drop rows with no temperature measurement
+```{r}
 NTLdata <- NTLdata %>%
   drop_na(temperature_C)
-dim(NTLdata)  
 
-# How many observations are there for each lake?
+```
+
+###Check dimensions again
+```{r}
+dim(NTLdata)
+```
+
+
+# Remove rows that contain NAs in temperature column
+
+## How many observations are there for each lake?
+```{r}
 summary(NTLdata$lakename)
+```
+
+
 
 # Let's choose the three lakes with data
+```{r}
 NTLdata <- NTLdata %>%
   filter(lakename %in% c("Paul Lake", "Peter Lake", "Tuesday Lake"))
+```
+
+
 
 # What is another way to use the filter command to get to the same result?
+```{r}
 NTLdata <- NTLdata %>%
   filter(lakename == "Paul Lake" | lakename == "Peter Lake" | 
            lakename == "Tuesday Lake")
+```
+
+
 
 # Make three data frames, one for each lake
+```{r}
 Pauldata <- filter(NTLdata, lakename == "Paul Lake")
 Peterdata <- filter(NTLdata, lakename == "Peter Lake")
 Tuesdaydata <- filter(NTLdata, lakename == "Tuesday Lake")
+```
+
+
 
 # How long did the monitoring last?
+```{r}
 min(Pauldata$sampledate)
 max(Pauldata$sampledate)
 min(Peterdata$sampledate)
 max(Peterdata$sampledate)
 min(Tuesdaydata$sampledate)
 max(Tuesdaydata$sampledate)
+```
+
+
 
 # Which depths are sampled in each lake?
+```{r}
 unique(Pauldata$depth)
 unique(Peterdata$depth)
 unique(Tuesdaydata$depth)
-# Why didn't we use the "summary" function here?
 ```
+
+
+# Why didn't we use the "summary" function here?
+The summary function tells you the min, mean, max, and quartiles. The unique function lets us know the unique depths sampled. From R help, "unique returns a vector, data frame or array like x but with duplicate elements/rows removed."
 
 ### Exploratory data visualization
 
@@ -101,7 +164,7 @@ print(TempvsDepth)
 ```
 
 How do temperatures at the surface compare to temperatures at the mid-depths and at the bottom?
-<add notes here>
+<Temperatures at the surface are warmer than temperatures at the bottom of the lake. The range of temperatures decrease as depth increases, so less light is able to penetrate the lake with depth. The bottom of the lake isn't interacting with the atmosphere.>
 
 Let's make a few data frames that include measurements from specific depths. We will choose dates only from the 2000s for ease of interpretation.
 
@@ -135,7 +198,9 @@ Tempplot.mixed <-
   labs(y = expression("Temperature "(degree*C)), x = "Year")
 print(Tempplot.mixed)
 ```
+###The bottom layer of the lake is likely mixed-same temperatures-called the hypolimnion
 
+###Surface layer of the lake is called the epilimnion
 Now let's take out the 2 m and 9 m points and add in the 4 m and 6 m points. How do these compare to the surface and bottom temperatures?
 <add notes here>
 
@@ -153,9 +218,13 @@ Tempplot.thermocline <-
   labs(y = expression("Temperature "(degree*C)), x = "Year")
 print(Tempplot.thermocline)
 ```
+The graph above this one has separation between the surface and the bottom. This graph has no separation between surface and bottom. This
+
 
 Why can't we use a line graph here?
-<add notes here>
+<We're sampling from May to August-the data stops at August, and we start sampling again the next may, so a line graph wouldn't be the best for this time series data>
+
+#Line graph
 ```{r}
 Tempplot.line <- 
   ggplot(Pauldata.surface, aes(x = sampledate, y = temperature_C)) +
@@ -181,27 +250,40 @@ Pauldata.May2016 <- filter(Pauldata, sampledate == "2016-05-17")
 Pauldata.June2016 <- filter(Pauldata, sampledate == "2016-06-21")
 Pauldata.July2016 <- filter(Pauldata, sampledate == "2016-07-26")
 Pauldata.Aug2016 <- filter(Pauldata, sampledate == "2016-08-16")
+```
 
+
+```{r}
 TempprofileMay2016 <- 
   ggplot(Pauldata.May2016, aes(x = temperature_C, y = depth)) +
   geom_line(color = "#081d58") +
-  geom_vline(xintercept = 4, lty = 2) +
-  scale_y_reverse(breaks = c(0, 2, 4, 6, 8, 10, 12)) +
+  geom_vline(xintercept = 4, lty = 2) + ###this line represents 4 degrees celsius-this is the temp of the maximum density of water. 4 degrees is the coldest a lake will get. 
+  scale_y_reverse(breaks = c(0, 2, 4, 6, 8, 10, 12)) + ###this is to flip the scales
   scale_x_continuous(position = "top", limits = c(0, 30)) +
   labs(x = expression("Temperature "(degree*C)), y = "Depth (m)")
 print(TempprofileMay2016)
+```
+###In May, the atmosphere and air warms, solar radiation heats up the lake at the surface. AS you go down in the water column however, the rest of the lake is cold and around 4 degrees celsius. Highest depth of the hypolimnion is about 5 meters. 
 
+```{r}
 TempprofileJune2016 <- 
   TempprofileMay2016 +
   geom_line(data = Pauldata.June2016, aes(x = temperature_C, y = depth), 
             color = "#253494")
 print(TempprofileJune2016)
+```
 
+
+```{r}
 TempprofileJuly2016 <- 
   TempprofileJune2016 +
   geom_line(data = Pauldata.July2016, aes(x = temperature_C, y = depth), 
             color = "#225ea8")
 print(TempprofileJuly2016)
+```
+
+
+```{r}
 
 TempprofileAug2016 <- 
   TempprofileJuly2016 +
@@ -209,10 +291,13 @@ TempprofileAug2016 <-
             color = "#1d91c0")
 print(TempprofileAug2016)
 ```
+
+
+
 <add notes here>
 
 In some places, the lines are not consistently smooth. What's going on here? How does this differ from your expectations of what the data should look like?
-<add notes here>
+<The lines arent consistently smoothed because ecosystems aren't perfect. Measurements taken with a profiler, which might make slight errors below the water column>
 
 If you were to explain this graph to someone who didn't know anything about lakes, how would you describe it? Write your answer below. 
 
@@ -236,12 +321,19 @@ print(Tempprofiles2016)
   
 ```
 
+##Darkest colors are earliest dates, lightest colors are later dates. 
 Paul Lake, like many lakes in temperate climates, is **dimictic**. What does this mean? What evidence do you see of this phenomenon in the graph? If you had data from the rest of the year, what would you expect to see?
-<add notes here>
+<Dimictic means two and mixing, so this lake mixes twice throughout the year. Once during fall turnover; As air cools during fall, density gradient between top and bottom of lake decreases. This also happens during spring; Ice on top during winter will melt during spring, and you'll have a water column that's 4 degrees celsius all the way down.>
+
+
+<Factors for Mixing:
+-You need wind for diffusion
+-You need a small enoughh density gradient so force of wind can mix up the water.>
 
 
 Let's put your prediction to the test. In 1993, the lake was sampled in November. Wrangle your data to capture this date and create a profile graph of that date.
 ```{r}
+November1993<-filter(Pauldata, year4 == 1993 | daynum == 306)
 
 ```
 

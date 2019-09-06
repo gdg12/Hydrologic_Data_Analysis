@@ -215,9 +215,16 @@ print(EnoPlot2)
 
 7. Label the day that Hurricane Florence hit North Carolina. 
 ```{r}
+EnoPlot2 <- 
+  ggplot(EnoDischargeFinal, aes(x = Date, y = Discharge), color="blue") +
+         geom_line(aes(x=Date, y=Discharge_meters_cubed_second), color="pink") +
+          labs(title="Eno River Discharge Over Time")+
+         xlab("Year")+gabytheme
+  
+
+print(EnoPlot2)
 
 
-color="black", linetype=1, size=0.5
 ```
 
 hint: look up this date
