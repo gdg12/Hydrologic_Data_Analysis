@@ -7,7 +7,7 @@ geometry: margin=2.54cm
 editor_options: 
   chunk_output_type: inline
 ---
-
+a
 ## Lesson Objectives
 1. Investigate the concepts of lake stratification and mixing by analyzing monitoring data
 2. Apply data analytics skills to applied questions about physical properties of lakes
@@ -328,7 +328,7 @@ Paul Lake, like many lakes in temperate climates, is **dimictic**. What does thi
 
 <Factors for Mixing:
 -You need wind for diffusion
--You need a small enoughh density gradient so force of wind can mix up the water.>
+-You need a small enough density gradient so force of wind can mix up the water.>
 
 
 Let's put your prediction to the test. In 1993, the lake was sampled in November. Wrangle your data to capture this date and create a profile graph of that date.
