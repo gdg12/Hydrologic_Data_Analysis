@@ -37,6 +37,7 @@ library(lubridate)
 
 # Load data
 ```{r}
+setwd("/Users/gabrielagarcia/Desktop/Hydrologic Data Analysis/Hydrologic_Data_Analysis/Data_Raw")
 NTLdata <- read.csv("NTL-LTER_Lake_ChemistryPhysics_Raw.csv")
 ```
 
@@ -61,7 +62,7 @@ class(NTLdata$sampledate)
 ```
 
 ```{r}
-
+class(NTLdata$sampledate)
 NTLdata$sampledate <- as.Date(NTLdata$sampledate, "%m/%d/%y")
 ```
 
@@ -323,7 +324,7 @@ print(Tempprofiles2016)
 
 ##Darkest colors are earliest dates, lightest colors are later dates. 
 Paul Lake, like many lakes in temperate climates, is **dimictic**. What does this mean? What evidence do you see of this phenomenon in the graph? If you had data from the rest of the year, what would you expect to see?
-<Dimictic means two and mixing, so this lake mixes twice throughout the year. Once during fall turnover; As air cools during fall, density gradient between top and bottom of lake decreases. This also happens during spring; Ice on top during winter will melt during spring, and you'll have a water column that's 4 degrees celsius all the way down.>
+<Dimictic means two and mixing, so this lake mixes twice throughout the year. Once during fall turnover; As air cools during fall, the density gradient between top and bottom of lake decreases. This also happens during spring; Ice on top during winter will melt during spring, and you'll have a water column that's 4 degrees celsius all the way down.>
 
 
 <Factors for Mixing:

@@ -166,31 +166,27 @@ Pauldata<-mutate(Pauldata, Month=month(sampledate))
 
 ##Filter Pauldata frame so it contains only surface depths and months 5-8
 ```{r}
-Pauldatafiltered<-filter(Pauldata, depth==0)
-```
-
-```{r}
-Pauldatafilteredsummer<-filter(Pauldatafiltered, Month==5|Month==6| Month==7| Month==8)
+Pauldatafiltered<-filter(Pauldata, depth==c(0, 0.0), Month==c(5, 6, 7, 8))
 ```
 
 ##PaulData for May
 ```{r}
-PauldatafilteredMay<-filter(Pauldatafilteredsummer, Month=="5")
+PauldatafilteredMay<-filter(Pauldatafiltered, Month=="5")
 ```
 
 ##Paul Data for June
 ```{r}
-PauldatafilteredJune<-filter(Pauldatafilteredsummer, Month=="6")
+PauldatafilteredJune<-filter(Pauldatafiltered, Month=="6")
 ```
 
 ##Paul Data for July
 ```{r}
-PauldatafilteredJuly<-filter(Pauldatafilteredsummer, Month=="7")
+PauldatafilteredJuly<-filter(Pauldatafiltered, Month=="7")
 ```
 
 ##Paul Data for August
 ```{r}
-PauldatafilteredAugust<-filter(Pauldatafilteredsummer, Month=="8")
+PauldatafilteredAugust<-filter(Pauldatafiltered, Month=="8")
 ```
 
 ##Linear Regression for May
@@ -228,7 +224,7 @@ summary(PaulLinearRegressionAugust)
 
 ###plot
 ```{r}
-PaulPlot<- ggplot(Pauldatafilteredsummer, aes(x = sampledate, y = temperature_C)) +
+PaulPlot<- ggplot(Pauldatafiltered, aes(x = sampledate, y = temperature_C)) +
   geom_point()+
   geom_smooth(se=FALSE, method=lm)+
   facet_grid(rows=vars(Month))
