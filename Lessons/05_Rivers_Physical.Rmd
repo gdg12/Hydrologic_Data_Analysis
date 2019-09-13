@@ -5,7 +5,7 @@ date: "Fall 2019"
 output: pdf_document
 geometry: margin=2.54cm
 editor_options: 
-  chunk_output_type: console
+  chunk_output_type: inline
 ---
 
 ## Lesson Objectives
@@ -16,11 +16,21 @@ editor_options:
 ## Opening Discussion
 What are the physical properties of streams and rivers? What variables might be of interest?
 
+Discharge (cubic feet per second, volume/time)
+Flow velocity (distance/time)
+Bed material-->erosion
+Temperature gradient
+Mixing-->turbulence and laminar flow
+Turbidity
+Slope
+
+
+Take velocity times cross-sectional area-->This gets you discharge
 ## Session Set Up
 
 ```{r, message = FALSE}
-getwd()
-
+setwd("/Users/gabrielagarcia/Desktop/Hydrologic Data Analysis/Hydrologic_Data_Analysis/Data_Raw")
+NTLdata <-read.csv("NTL-LTER_Lake_ChemistryPhysics_Raw.csv")
 library(tidyverse)
 library(dataRetrieval)
 library(cowplot)
@@ -33,20 +43,41 @@ theme_set(theme_classic())
 
 One of the most important physical characteristics of a stream or river is **discharge**, the volume of water moving through the stream over a given amount of time. Discharge can be measured directly by measuring the velocity of flow in several spots in a stream and multiplying the flow velocity over the cross-sectional area of the stream. However, this method is effort-intensive. An easier way to approximate discharge is by developing a **rating curve** for a stream at a given sampling point. To develop a rating curve, a series of measurements of discharge and stream stage must be made together to develop a mathematical relationship. Then, subsequent discharge measurements can be calculated from a measurement of stream stage, measured by a gage that takes readings remotely. 
 
+
+
 ```{r}
 EnoDischarge.ratingcurve <- readNWISdv(siteNumbers = "02096500",
                      parameterCd = c("00060", "00065"),
                      startDate = "2009-08-01",
                      endDate = "2019-07-31")
 
+###00060=disarche
+###00065=gage height
+```
+
+```{r}
+
 names(EnoDischarge.ratingcurve)[4:7] <- c("Discharge", "D.Approval.Code",
                                           "Gage.Height", "GH.Approval.Code")
+```
 
+```{r}
 DvsGHplot <-
   ggplot(EnoDischarge.ratingcurve, aes(x = Discharge, y = Gage.Height)) +
-  geom_point(alpha = 0.5) 
+  geom_point(alpha = 0.5) +gabytheme
 print(DvsGHplot)
 ```
+We have a positive correlation overall, but as discharge increases, our gage height gains propoortionally less and less height over time. This is a logarithmic relationship. Discharge dictates what gage height is, which is why discharge is on the x-axis. This is how the USGS uses for their data. 
+
+```{r}
+DvsGHplot2 <-
+  ggplot(EnoDischarge.ratingcurve, aes(x =Gage.Height, y = Discharge)) +
+  geom_point(alpha = 0.5) 
+  
+print(DvsGHplot2)
+```
+
+
 
 ### Data import
 We will again be using the dataRetrieval package, which allows us to access USGS hydrologic data. We will be using the hydrologic data capabilities of this package today, but the package also comes with additional functionality to access water quality data from the Water Quality Portal. 
@@ -64,12 +95,52 @@ We will be analyzing data from the following rivers/streams today:
 * Sauk River in Minnesota (Dr. Salk's hometown)
 * Nehalem River in Oregon
 
+
+NWIS allows you to gather physical data from USGS online. 
+
+##Each row of data represents a different type of data for the same site number. It's either a spciefic variable that was measured or a different stat like (peak discharge vs. average discharge)
+
 ```{r}
-EnoSummary <- whatNWISdata(siteNumbers = "02096500")
+EnoSummary <- whatNWISdata(siteNumbers = "02096500") ##whatNWISdata allows us to access metadata about a site
+print(EnoSummary)
+
+```
+00001	Maximum
+00002	Minimum
+00003	Mean
+00008	Median
+
+pCode	shortName
+00060	Discharge [ft3/s]
+00065	Gage height [ft]
+00010	Temperature [C]
+00045	Precipitation [in]
+00400	pH
+
+```{r}
 VerdeSummary <- whatNWISdata(siteNumbers = "09504000")
+print(VerdeSummary)
+
+```
+
+
+
+```{r}
 BitterrootSummary <- whatNWISdata(siteNumbers = "12344000")
-SaukSummary <- whatNWISdata(siteNumbers = "05270500")
+print(BitterrootSummary)
+```
+
+
+
+```{r}
+ SaukSummary <- whatNWISdata(siteNumbers = "05270500")
+print(SaukSummary)
+```
+
+
+```{r}
 NehalemSummary <- whatNWISdata(siteNumbers = "14299800")
+print(NehalemSummary)
 ```
 
 What data are available from the sites? Pay particular attention to the parameter codes and statistic codes.
@@ -99,51 +170,113 @@ EnoDischarge <- readNWISdv(siteNumbers = "02096500",
                      startDate = "2009-09-01",
                      endDate = "2019-08-31")
 
+
+```
+##If you leave the start date as blank, it'll return the whole period of record to you. Keep the quotation marks in between the equal sign and parentheses so you can actually get the data. 
+
+```{r}
+
 VerdeDischarge <- readNWISdv(siteNumbers = "09504000",
                      parameterCd = "00060", # discharge (ft3/s)
                      startDate = "2009-09-01",
                      endDate = "2019-08-31")
+```
 
+
+```{r}
 BitterrootDischarge <- readNWISdv(siteNumbers = "12344000",
                      parameterCd = "00060", # discharge (ft3/s)
                      startDate = "2009-09-01",
                      endDate = "2019-08-31")
+```
 
+```{r}
 SaukDischarge <- readNWISdv(siteNumbers = "05270500",
                      parameterCd = "00060", # discharge (ft3/s)
                      startDate = "2009-09-01",
                      endDate = "2019-08-31")
+```
 
+```{r}
 NehalemDischarge <- readNWISdv(siteNumbers = "14299800",
                      parameterCd = "00060", # discharge (ft3/s)
                      startDate = "2009-09-01",
                      endDate = "2019-08-31")
-
 ```
+
+
+
+>00060_00003 is the Parameter_Statistics Code. The 00060_00003_cd is a code for either approved data or provisional data
+
+>siteNumbers	
+character USGS site number. This is usually an 8 digit number. Multiple sites can be requested with a character vector.
+
+>parameterCd	
+character of USGS parameter code(s). This is usually an 5 digit number.
+
+>startDate	
+character starting date for data retrieval in the form YYYY-MM-DD. Default is "" which indicates retrieval for the earliest possible record. Date arguments are always specified in local time.
+
+>endDate	
+character ending date for data retrieval in the form YYYY-MM-DD. Default is "" which indicates retrieval for the latest possible record. Date arguments are always specified in local time.
+
+>statCd	
+character USGS statistic code. This is usually 5 digits. Daily mean (00003) is the default.
+
+
+
 
 ### Data Wrangling
 ```{r}
 
 # Renaming columns (one method of multiple)
 names(EnoDischarge)[4:5] <- c("Eno.Discharge", "Eno.Approval.Code")
+
+```
+
+
+
+```{r}
 names(VerdeDischarge)[4:5] <- c("Verde.Discharge", "Verde.Approval.Code")
+```
+
+```{r}
 names(BitterrootDischarge)[4:5] <- c("Bitterroot.Discharge", "Bitterroot.Approval.Code")
+```
+
+```{r}
 names(SaukDischarge)[4:5] <- c("Sauk.Discharge", "Sauk.Approval.Code")
+```
+
+```{r}
+
 names(NehalemDischarge)[4:5] <- c("Nehalem.Discharge", "Nehalem.Approval.Code")
+```
+
+
 
 # Remove agency_cd column from each data frame
+```{r}
 EnoDischarge <- select(EnoDischarge, -agency_cd)
 VerdeDischarge <- select(VerdeDischarge, -agency_cd)
 BitterrootDischarge <- select(BitterrootDischarge, -agency_cd)
 SaukDischarge <- select(SaukDischarge, -agency_cd)
 NehalemDischarge <- select(NehalemDischarge, -agency_cd)
 
+```
+
 # Join data frames
-CombinedDischarge <- full_join(EnoDischarge, VerdeDischarge, by = "Date") %>%
-  full_join(., BitterrootDischarge, by = "Date") %>%
+```{r}
+CombinedDischarge <- full_join(EnoDischarge, VerdeDischarge, by = "Date") %>% ##join by date, then pipe
+  full_join(., BitterrootDischarge, by = "Date") %>% ##full join bitterroot discharge by date
   full_join(., SaukDischarge, by = "Date") %>%
   full_join(., NehalemDischarge, by = "Date")
 ```
+
+
+
+
+
 
 ### Data Visualization
 ```{r}
@@ -157,6 +290,10 @@ EnoPlot <-
         axis.text.x = element_blank(), axis.title.x = element_blank())
 print(EnoPlot)
 
+
+```
+
+```{r}
 VerdePlot <- 
   ggplot(CombinedDischarge, aes(x = Date, y = Verde.Discharge)) +
   geom_line() +
@@ -165,7 +302,9 @@ VerdePlot <-
   theme(plot.title = element_text(margin = margin(b = -10), size = 12), 
         axis.text.x = element_blank(), axis.title.x = element_blank())
 print(VerdePlot)
+```
 
+```{r}
 BitterrootPlot <- 
   ggplot(CombinedDischarge, aes(x = Date, y = Bitterroot.Discharge)) +
   geom_line() +
@@ -174,6 +313,10 @@ BitterrootPlot <-
   theme(plot.title = element_text(margin = margin(b = -10), size = 12), 
         axis.text.x = element_blank(), axis.title.x = element_blank())
 print(BitterrootPlot)
+```
+
+
+```{r}
 
 SaukPlot <- 
   ggplot(CombinedDischarge, aes(x = Date, y = Sauk.Discharge)) +
@@ -183,7 +326,9 @@ SaukPlot <-
   theme(plot.title = element_text(margin = margin(b = -10), size = 12), 
         axis.text.x = element_blank(), axis.title.x = element_blank())         
 print(SaukPlot)
+```
 
+```{r}
 NehalemPlot <- 
   ggplot(CombinedDischarge, aes(x = Date, y = Nehalem.Discharge)) +
   geom_line() +
@@ -191,43 +336,71 @@ NehalemPlot <-
   labs(x = "", y = expression("Discharge (ft"^3*"/s)")) + 
   theme(plot.title = element_text(margin = margin(b = -10), size = 12))
 print(NehalemPlot)
+```
+
+
+```{r, fig.height=4}
 
 CombinedPlot <- 
   plot_grid(EnoPlot, VerdePlot, BitterrootPlot, SaukPlot, NehalemPlot, 
-            ncol = 1)
+            ncol = 1) +gabytheme
 print(CombinedPlot)
 ```
+>* Eno River in North Carolina
+* Verde River in Arizona (the largest perennial stream in AZ)
+* Bitterroot River in Montana
+* Sauk River in Minnesota (Dr. Salk's hometown)
+* Nehalem River in Oregon
+
+
 
 How does the magnitude of discharge compare for these rivers?
 
->
+>The magnitude of discharge for the Eno River has several high frequency peaks because of consistent precipitation patterns, e.g. rain. The Bitterroot is farther north in Montana and it's likely the peaks are due to snowpack melting and entering streams and rivers, thus the peaks of  discharge that does down for the remiander of the summer during dry conditions. The magnitude of discharge for the Verde river is very low and only has a few pronounced discharge peaks. This could be due to being in the dry desert Arizona climate. 
 
 Which of these rivers have a seasonal cycle of discharge? How might you explain the presence and timing of seasonal cycles based on climatic conditions?
+>in the last years, the seasonal cycles has become less defined. The destruction of the seasonal cycles could be due to warming climate (warmer winters and more erratic precipitation). 
 
->
 
 Hypothetical question: If you wanted to create a ggplot using facets instead of `plot_grid`, how would you go about wrangling your dataset differently? 
 
->
+>We could facet by site number 
+>We could also use rbind(). We would need the same column titles in each of our data frames, which would work b/c when you generate the data from Davtaretrieval, they  do have the same column names. 
 
 ## Defining "typical" discharge pattern
 Let's take the Bitterroot River, which displays a clear seasonal cycle. Let's define the median discharge on a given day of year and overlay this onto the range experienced. We will take a longer period of record this time.
 ```{r}  
 BitterrootDischarge.Historical <- readNWISdv(siteNumbers = "12344000",
                      parameterCd = "00060", # discharge (ft3/s)
-                     startDate = "1969-09-01",
+                     startDate = "1969-09-01", ###50 years of data instead of 10-->18,000 observations
                      endDate = "2019-08-31")
 
+
+```
+
+
+```{r}
+
 names(BitterrootDischarge.Historical)[4:5] <- c("Discharge", "Approval.Code")
+```
 
+```{r}
 BitterrootDischarge.Historical <- mutate(BitterrootDischarge.Historical, 
-                                         DOY = yday(Date))
+                                         DOY = yday(Date))   #add DOY=day of year column
+```
 
+
+##Find pattern for each day of the year. Take historical data frame, then group by Day of Year. This takes Juanury 1 of each year and appends them together. It does this for all other days of the year. 
+```{r}
 BitterrootDischarge.Pattern <- BitterrootDischarge.Historical %>%
   group_by(DOY) %>%
   summarise(Median.Discharge = median(Discharge), 
-            Max.Discharge = max(Discharge),
+            Max.Discharge = max(Discharge), ###max and min of 50 years of data for any given day
             Min.Discharge = min(Discharge))
+```
+
+# Make GGPLot of this discharge pattern
+```{r}
 
 BitterrootPatternPlot <- 
   ggplot(BitterrootDischarge.Pattern, aes(x = DOY)) +
@@ -237,8 +410,12 @@ BitterrootPatternPlot <-
   labs(x = "Day of Year", y = expression("Discharge (ft"^3*"/s)")) 
 print(BitterrootPatternPlot)
 ```
+###Instead of using max, min, and medium to represent range of all 50 years of data, we could use somethng more stastically representative like a 95% confidence interval or the quantiles of our points. 
 
-Challenge: Edit the code above so that rather than plotting the minimum and maximum discharge, you are plotting the 95 % confidence interval of the discharge on a given date. Hint: look up the formula for confidence interval.
+
+Challenge: Edit the code above so that rather than plotting the minimum and maximum discharge, you are plotting the 95 % confidence interval of the discharge on a given date. Hint: look up the formula for confidence interval. This requires a mathematical equation into the summarise function shown above. 
 
 ## Closing Discussion
-What are your impressions of seasonal and interannual discharge for our example rivers? How might you go about interpreting discharge data for any given river?
+What are your impressions of seasonal and interannual discharge for our example rivers? How might you go about interpreting discharge data for any given river? If we were given a random river around the world, how would we descrive discharge?
+
+The location of the river, climate ,and weather patterns would affect the hydrographs of the river. If there is consistent rain precipitation like in the Southeast and very litle snow, I would expect smaller but more frequent peaks over time which represents storm or rain events. If we are considering a river in a cooler mountainous area like Utah with less precipitation, I would expect this river's hydrograph to have less frequent but larger peaks, due to snow melt events entering the river. 
