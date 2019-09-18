@@ -115,7 +115,8 @@ TempvsDepth1989 <-ggplot(TuesdayData1989, aes(x =temperature_C, y =depth, color=
   geom_point() +
     scale_y_reverse() +
   scale_x_continuous(position="top")+
-  scale_color_viridis_c(end = 0.8, option = "magma")+
+  scale_color_viridis_c(option="magma", limits = c(min(TuesdayData1989$daynum),
+max(TuesdayData1989$daynum))) +
   labs(title="The Effect of Water Temperature on Depth at Tuesday Lake in 1989", 
        x = expression("Temperature "(degree*C)), y = "Depth (m)") +
   gabytheme+
@@ -136,7 +137,8 @@ TempvsDepth2014 <-
   geom_point() +
    scale_y_reverse()+
   scale_x_continuous(position="top")+
-  scale_color_viridis_c(end = 0.8, option = "magma") +
+  scale_color_viridis_c(option="magma", limits = c(min(TuesdayData1989$daynum),
+max(TuesdayData1989$daynum))) +
   labs(title="The Effect of Water Temperature on Depth at Tuesday Lake in 2014",
        x = expression("Temperature "(degree*C)), y = "Depth (m)") +
   gabytheme+

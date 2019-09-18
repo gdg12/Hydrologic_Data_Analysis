@@ -28,7 +28,7 @@ Slope
 Take velocity times cross-sectional area-->This gets you discharge
 ## Session Set Up
 
-```{r, message = FALSE}
+```{r, message = FALSE, warning=FALSE}
 setwd("/Users/gabrielagarcia/Desktop/Hydrologic Data Analysis/Hydrologic_Data_Analysis/Data_Raw")
 NTLdata <-read.csv("NTL-LTER_Lake_ChemistryPhysics_Raw.csv")
 library(tidyverse)
@@ -67,7 +67,7 @@ DvsGHplot <-
   geom_point(alpha = 0.5) +gabytheme
 print(DvsGHplot)
 ```
-We have a positive correlation overall, but as discharge increases, our gage height gains propoortionally less and less height over time. This is a logarithmic relationship. Discharge dictates what gage height is, which is why discharge is on the x-axis. This is how the USGS uses for their data. 
+>We have a positive correlation overall, but as discharge increases, our gage height gains propoortionally less and less height over time. This is a logarithmic relationship. Discharge dictates what gage height is, which is why discharge is on the x-axis. This is how the USGS uses their data. 
 
 ```{r}
 DvsGHplot2 <-
@@ -98,7 +98,7 @@ We will be analyzing data from the following rivers/streams today:
 
 NWIS allows you to gather physical data from USGS online. 
 
-##Each row of data represents a different type of data for the same site number. It's either a spciefic variable that was measured or a different stat like (peak discharge vs. average discharge)
+>Each row of data represents a different type of data for the same site number. It's either a specific variable that was measured or a different stat like (peak discharge vs. average discharge)
 
 ```{r}
 EnoSummary <- whatNWISdata(siteNumbers = "02096500") ##whatNWISdata allows us to access metadata about a site
@@ -172,7 +172,7 @@ EnoDischarge <- readNWISdv(siteNumbers = "02096500",
 
 
 ```
-##If you leave the start date as blank, it'll return the whole period of record to you. Keep the quotation marks in between the equal sign and parentheses so you can actually get the data. 
+>If you leave the start date as blank, it'll return the whole period of record to you. Keep the quotation marks in between the equal sign and parentheses so you can actually get the data. 
 
 ```{r}
 
@@ -226,7 +226,7 @@ character USGS statistic code. This is usually 5 digits. Daily mean (00003) is t
 
 
 
-### Data Wrangling
+# Data Wrangling
 ```{r}
 
 # Renaming columns (one method of multiple)
@@ -292,6 +292,10 @@ print(EnoPlot)
 
 
 ```
+>North Carolina
+
+
+
 
 ```{r}
 VerdePlot <- 
@@ -303,6 +307,7 @@ VerdePlot <-
         axis.text.x = element_blank(), axis.title.x = element_blank())
 print(VerdePlot)
 ```
+>Arizona
 
 ```{r}
 BitterrootPlot <- 
@@ -314,10 +319,9 @@ BitterrootPlot <-
         axis.text.x = element_blank(), axis.title.x = element_blank())
 print(BitterrootPlot)
 ```
-
+>Montana. Obvious snow storm/melting events
 
 ```{r}
-
 SaukPlot <- 
   ggplot(CombinedDischarge, aes(x = Date, y = Sauk.Discharge)) +
   geom_line() +
@@ -327,6 +331,7 @@ SaukPlot <-
         axis.text.x = element_blank(), axis.title.x = element_blank())         
 print(SaukPlot)
 ```
+>Minnesota
 
 ```{r}
 NehalemPlot <- 
@@ -337,7 +342,7 @@ NehalemPlot <-
   theme(plot.title = element_text(margin = margin(b = -10), size = 12))
 print(NehalemPlot)
 ```
-
+>Oregon
 
 ```{r, fig.height=4}
 
