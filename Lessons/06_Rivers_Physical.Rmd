@@ -615,6 +615,9 @@ Green.RImodel.Full$coefficients[1] + Green.RImodel.Full$coefficients[2]*log(500)
 >Discharge is 18,211 cfs
 
 
+```{r}
+Manganese.raw$site<-Manganese.raw$site_no
+```
 
 
 
