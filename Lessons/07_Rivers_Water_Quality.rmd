@@ -115,7 +115,7 @@ What is the data frequency of these water quality samples? Why don't we have dai
 
 >
   
-## What can legislative protections do for water quality?
+# What can legislative protections do for water quality?
 
 In 1977 the Surface Mining Control and Reclamation Act (SMCRA) was passed. Take a look at how water quality changed after 1977.
 ```{r View_Kanawha_all}
@@ -168,7 +168,9 @@ Kanawha.yearly.averages <- dat %>%
 Kanawha.early <- Kanawha.yearly.averages %>% filter(Year %in% c(1958:1977))
 Kanawha.late <- Kanawha.yearly.averages %>% filter(Year %in% c(1978:1997))
 
+```
 
+```{r}
 histograms <- ggplot(Kanawha.yearly.averages %>% filter(!is.na(bin)), 
        aes(x = SpC, fill = bin)) +
   geom_histogram(alpha = 0.8) +
@@ -182,6 +184,10 @@ histograms <- ggplot(Kanawha.yearly.averages %>% filter(!is.na(bin)),
 
 print(histograms)
 
+```
+
+
+```{r}
 densityplots <- ggplot(Kanawha.yearly.averages %>% filter(!is.na(bin)), 
        aes(x = SpC, fill = bin)) +
   geom_density(alpha = 0.8) +
@@ -194,7 +200,9 @@ densityplots <- ggplot(Kanawha.yearly.averages %>% filter(!is.na(bin)),
                     labels=c("20 years before SMCRA", "20 years after SMCRA"))
 
 print(densityplots)
+```
 
+```{r}
 x <- (Kanawha.yearly.averages %>% filter(bin == "Pre"))$SpC
 y <- (Kanawha.yearly.averages %>% filter(bin == "Post"))$SpC
 
@@ -205,6 +213,10 @@ cat("Length x:", length(x), "\n", "Length y:", length(y))
 
 t.test(x, y)
 ```
+
+
+
+
 
 How would you communicate these results to a manager? 
 

@@ -265,7 +265,7 @@ print(coli.seasons)
 
 When are total coliform concentrations highest? Why might this be?
 
->Colfiromns are highest in July, August, and September and you have minimums in the winter months. This is because warmer summer temperatures allow microbes to grow more prolifically. It's not a perfect correlation (we see some time lag in November and December). 
+>Coliforms are highest in July, August, and September and you have minimums in the winter months. This is because warmer summer temperatures allow microbes to grow more prolifically. It's not a perfect correlation (we see some time lag in November and December). 
 
 Does this pattern also exist for the other microbial indicators?
 
@@ -300,7 +300,7 @@ Many older WWTPs combine the sanitary sewer system of a city and the storm water
 
 The USGS site that we got the water quality data from does not have discharge data. Other nearby sites with discharge data include a site (```01100000```) 4 miles downstream on the Merrimack River, or a site (```01099500```) 4 miles away on the Concord River. The Merrimack River at this location drains ~4,000 square miles, and the Concord River (about 4 miles away from Merrimack river) drains ~400 square miles. The Concord River gage will be a better indicator since it'll react much more to lcoal storm conditions since it's a smaller area and drains a smaller watershed. 
 
->In wastewater teatment plants, water drains out of storm water system (street)and from residences (municipal water system). If it rains a lot, the amount of water coming out of the storm drain also increases, so water can't spend all day sitting in a fixed size tank and musr be pushed out. As stormwater is leaving tank, it takes municipal water with it. 
+>In wastewater teatment plants, water drains out of storm water system (street)and from residences (municipal water system). If it rains a lot, the amount of water coming out of the storm drain also increases, so water can't spend all day sitting in a fixed size tank and must be pushed out. As stormwater is leaving tank, it takes municipal water with it. 
 What would microbial indicators look like if raw sewage entered the stream? The amount of microbial indicators would increase. The discharge after the storm event would be high
 
 Which site's discharge data would better indicate when the city of Lowell has experienced a big rain event?
@@ -359,8 +359,8 @@ Look through the data series and see if you can find some times when a CSO likel
 >August 7, 1972 (decreasing discharge with super high fecal coliform values), 
 
 
-High coliform with high discharge=coliform washed
-High coliform during falling discharge occurs during point source pollution coming into the system. When natural discharge from watershed decreases, there is a higher proportion of point source discharge in the water.
+>High coliform with high discharge=coliform washed
+>High coliform during falling discharge occurs during point source pollution coming into the system. When natural discharge from watershed decreases, there is a higher proportion of point source discharge in the water.
 Also, if flow isn't going very fast, the amount of coliform grows.
 
 ```{r}

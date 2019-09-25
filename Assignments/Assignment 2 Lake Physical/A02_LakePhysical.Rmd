@@ -20,7 +20,7 @@ This exercise accompanies the lessons in Hydrologic Data Analysis on the physica
 
 The completed exercise is due on 11 September 2019 at 9:00 am.
 
-# Setup
+## Setup
 
 1. Verify your working directory is set to the R project file, 
 2. Load the tidyverse, lubridate, and cowplot packages
@@ -44,10 +44,7 @@ library(pals)
 
 ###Import Dataset and set date column to date format
 ```{r, warning=FALSE, message=FALSE}
-
 setwd("/Users/gabrielagarcia/Desktop/Hydrologic Data Analysis/Hydrologic_Data_Analysis/Data_Raw")
-
-
 NTLdata <-read.csv("NTL-LTER_Lake_ChemistryPhysics_Raw.csv")
 
 NTLdata$sampledate <- as.Date(NTLdata$sampledate, "%m/%d/%y")
@@ -77,7 +74,7 @@ theme_set(gabytheme)
 
 ### Single lake, multiple dates
 
-# 5. Choose either Peter or Tuesday Lake. Create a new data frame that wrangles the full data frame so that it only includes that lake during two different years (one year from the early part of the dataset and one year from the late part of the dataset).
+5. Choose either Peter or Tuesday Lake. Create a new data frame that wrangles the full data frame so that it only includes that lake during two different years (one year from the early part of the dataset and one year from the late part of the dataset).
 
 ### Tuesday Lake
 ```{r}
@@ -96,7 +93,7 @@ TuesdayData2014<-filter(TuesdayData, year4==2014)
 
 
 
-# 6. Create three graphs: (1) temperature profiles for the early year, (2) temperature profiles for the late year, and (3) a `plot_grid` of the two graphs together. Choose `geom_point` and color your points by date. 
+6. Create three graphs: (1) temperature profiles for the early year, (2) temperature profiles for the late year, and (3) a `plot_grid` of the two graphs together. Choose `geom_point` and color your points by date. 
 
 Remember to edit your graphs so they follow good data visualization practices.
 
@@ -105,64 +102,49 @@ Remember to edit your graphs so they follow good data visualization practices.
 boldtext <- element_text(face = "bold", color = "black", size=11)
 ```
 
-
 ## 1989 Temperature Profile 
 ```{r, warning=FALSE, message=FALSE, fig.width=10, fig.height=5}
 library(viridis)
 library(jcolors)
 library(ggsci)
-TempvsDepth1989 <-ggplot(TuesdayData1989, aes(x =temperature_C, y =depth, color=daynum)) + 
-  geom_point() +
+TempvsDepth1989 <-ggplot(TuesdayData1989, aes(x =temperature_C, y =depth, color=sampledate)) + 
+  geom_point(aes(x =temperature_C, y =depth, color=sampledate), alpha = 0.5) +
     scale_y_reverse() +
-  scale_x_continuous(position="top")+
-  scale_color_viridis_c(option="magma", limits = c(min(TuesdayData1989$daynum),
-max(TuesdayData1989$daynum))) +
   labs(title="The Effect of Water Temperature on Depth at Tuesday Lake in 1989", 
-       x = expression("Temperature "(degree*C)), y = "Depth (m)") +
-  gabytheme+
-    theme(legend.key.width=unit(1,"cm"))
+       x = expression("Temperature "(degree*C)), y = "Depth (m)") 
 
 print(TempvsDepth1989)
 ```
 
 
 ## 2014 Temperature Profile
-
-```{r, warning-FALSE, message=FALSE,fig.width=11, fig.height=5}
-library(viridis)
-library(jcolors)
-library(ggsci)
+```{r, warning-FALSE, message=FALSE,fig.width=10, fig.height=5}
 TempvsDepth2014 <- 
-  ggplot(TuesdayData2014, aes(x =temperature_C, y =depth, color=daynum)) + 
-  geom_point() +
-   scale_y_reverse()+
-  scale_x_continuous(position="top")+
-  scale_color_viridis_c(option="magma", limits = c(min(TuesdayData1989$daynum),
-max(TuesdayData1989$daynum))) +
+  ggplot(TuesdayData2014, aes(x =temperature_C, y =depth, color=sampledate)) + 
+  scale_y_reverse()+
+  geom_point(aes(x =temperature_C, y =depth, color=sampledate), alpha = 0.5) +
   labs(title="The Effect of Water Temperature on Depth at Tuesday Lake in 2014",
-       x = expression("Temperature "(degree*C)), y = "Depth (m)") +
-  gabytheme+
-  theme(legend.key.width=unit(1,"cm"))
+       x = expression("Temperature "(degree*C)), y = "Depth (m)") +gabytheme
 print(TempvsDepth2014) 
 ```
 
 ### Tuesday Lake 1989 and 2014 Plot Grid Visualization
 ```{r, fig.height=7, fig.width=10, warning=FALSE, message=FALSE}
 PhysicalProfiles19892014<-plot_grid(TempvsDepth1989, TempvsDepth2014, 
-            nrow = 2, rel_heights =c(1,1)) 
+            nrow = 2, rel_heights = 10) 
 print(PhysicalProfiles19892014)
 ```
 
 
 
 
-# 7. Interpret the stratification patterns in your graphs in light of seasonal trends. In addition, do you see differences between the two years?
+7. Interpret the stratification patterns in your graphs in light of seasonal trends. In addition, do you see differences between the two years?
 
-> In both of my graphs, I see the expected stratification pattern typical of lakes, where the epilimnion or surface layer has the highest temperatures, due to more solar radiation or sunlight being able to penetrate the surface layers. The range of temperatures decreases as depth increases, so less light is able to penetrate the lake with depth because the bottom of the lake isn't interacting with the atmosphere. The data set for both 1989 and 2014 begins in late May, and I noticed that data points with the darkest color symbology (in late May or early June) tend to correspond to the lower water temperatures (less than 5 degrees Celsius), even in water depths at the thermocline and hypolimnion. AKA, the darker data points are to the left of the lighter points.  This makes sense because water temperatures will be higher later in the season. Likewise, data points with the lightest color symbology (August through early Semptember) usually correspond to warmer water temperatures, even in depths at the thermocline and the hypolimnion. I do not see much of a difference between the two years. 
+> 
 
 ### Multiple lakes, single date 
 
-# 8. On July 25, 26, and 27 in 2016, all three lakes (Peter, Paul, and Tuesday) were sampled. Wrangle your data frame to include just these three dates.
+8. On July 25, 26, and 27 in 2016, all three lakes (Peter, Paul, and Tuesday) were sampled. Wrangle your data frame to include just these three dates.
 
 ```{r, warning=FALSE, message=FALSE}
  PeterPaulTuesdayJuly<- 
@@ -175,7 +157,7 @@ PeterPaulTuesdayJulyFinal<-PeterPaulTuesdayJuly[c(615:677),]
 ```
 
 
-# 9. Plot a profile line graph of temperature by depth, one line per lake. Each lake can be designated by a separate color.
+9. Plot a profile line graph of temperature by depth, one line per lake. Each lake can be designated by a separate color.
 
 ```{r, message=FALSE, warning=FALSE}
 PeterPaulTuesdayJulyPlot<-ggplot(PeterPaulTuesdayJulyFinal, 
@@ -191,7 +173,7 @@ geom_line(data=PeterPaulTuesdayJulyFinal, aes(x = temperature_C, y = depth))+
 print(PeterPaulTuesdayJulyPlot)
 ```
 
-# 10. What is the depth range of the epilimnion in each lake? The thermocline? The hypolimnion?
+10. What is the depth range of the epilimnion in each lake? The thermocline? The hypolimnion?
 
 >The epilimnion is the surface layer in a stratified lake. The epilimnion depth ranges in Tuesday Lake is from 0 meters to about 1.35 meters below the surface. The epilimnion depth range in Peter Lake is from 0 meters to about 1.9 meters below the surface. The epilimnion depth range in Paul Lake is from 0 meters to about 2 meters below the surface. 
 
@@ -199,13 +181,23 @@ print(PeterPaulTuesdayJulyPlot)
 
 >The hypolimnion is the lower layer of water in a stratified lake, typically cooler than the water above and relatively stagnant. The hypolimion in Tuesday lake ranges from 5 meters to 12.0 meters below surface. The hypolimnion in Peter Lake ranges from about 6 meters to 12.0 meters below the surface. The hypolimnion in Pual lake ranges from about 6.875 meters to 12 meters below the surface. 
 
-
-# 11. Run the same analyses we ran in class to determine if surface lake temperatures for a given month have increased over time ("Long-term change in temperature" section of day 4 lesson in its entirety), this time for either Peter or Tuesday Lake. 
+## Trends in surface temperatures over time. 
+11. Run the same analyses we ran in class to determine if surface lake temperatures for a given month have increased over time ("Long-term change in temperature" section of day 4 lesson in its entirety), this time for either Peter or Tuesday Lake. 
 
 How much have surface temperatures increased over the period of study? Is this increase significant? Isolate surface depths and run the test for May, June, July, and August temperatures separately. Use a linear regression with year as the predictor variable and temperature as the response variable.
 
+Steps: 
 
-##  Filter Data by Tuesday Lake and add a Month Column
+1. Add a column named "Month" to the data frame (hint: lubridate package)
+2. Filter your data frame so that it only contains surface depths and months 5-8
+3. Create 4 separate data frames, one for each month
+4. Run a linear regression for each data frame (see instructions above)
+5. For significant trends, calculate how many degrees the lake has warmed over the period of study
+5. Create a ggplot of surface temps by date and facet by month. Add `geom_smooth(se = FALSE, method = lm)` to the plot to display the regression line.
+Tempprofiles2016
+
+
+## Tuesday Lake
 ```{r}
 Tuesdaydata <- filter(NTLdata, lakename == "Tuesday Lake")
 Tuesdaydata$Month<-as.Date(Tuesdaydata $sampledate,format="%m/%d/%y")
@@ -213,35 +205,29 @@ Tuesdaydata<-mutate(Tuesdaydata, Month=month(sampledate))
 
 ```
 
-
-## Filter Tuesday Lake data frame so it contains only surface depths 
-```{r}
-Tuesdaydatafiltered<-filter(Tuesdaydata, depth==0)
-```
-
-## Filter Tuesday Lake data frame so it only contains Months 5-8
-```{r}
-Tuesdaydatafilteredsummer<-filter(Tuesdaydatafiltered, Month==5| Month==6| Month==7| Month==8)
+## Filter data frame for surface depths from months 5-8
+```{r, warning=FALSE, message=FALSE}
+Tuesdaydatafiltered<-filter(Tuesdaydata, depth==0.0, Month==c(5, 6, 7, 8))
 ```
 
 ### Tuesday Lake Data for May
 ```{r}
-TuesdaydatafilteredMay<-filter(Tuesdaydatafilteredsummer, Month=="5")
+TuesdaydatafilteredMay<-filter(Tuesdaydatafiltered, Month=="5")
 ```
 
 ### Tuesday Lake Data for June
 ```{r}
-TuesdaydatafilteredJune<-filter(Tuesdaydatafilteredsummer, Month=="6")
+TuesdaydatafilteredJune<-filter(Tuesdaydatafiltered, Month=="6")
 ```
 
 ###  Tuesday Lake Data for July
 ```{r}
-TuesdaydatafilteredJuly<-filter(Tuesdaydatafilteredsummer, Month=="7")
+TuesdaydatafilteredJuly<-filter(Tuesdaydatafiltered, Month=="7")
 ```
 
 ### Tuesday Lake Data for August
 ```{r}
-TuesdaydatafilteredAugust<-filter(Tuesdaydatafilteredsummer, Month=="8")
+TuesdaydatafilteredAugust<-filter(Tuesdaydatafiltered, Month=="8")
 ```
 
 
@@ -250,7 +236,7 @@ TuesdaydatafilteredAugust<-filter(Tuesdaydatafilteredsummer, Month=="8")
 TuesdayLinearRegressionMay<-lm(TuesdaydatafilteredMay$temperature_C~TuesdaydatafilteredMay$year4)
 summary(TuesdayLinearRegressionMay)
 ```
->The Tuesday Lake surface data for the month of May does not display a significant trend because the p-value is 0.556, which is greater than 0.05. 
+>Temperature decreases 0.04 degrees per year. For the whole time span, the temperature decreases -0.04*33=1.32 (33 is number of years data spans), so there is a 1.32 degree decrease over the period of study for May.
 
 
 
@@ -259,32 +245,31 @@ summary(TuesdayLinearRegressionMay)
 TuesdayLinearRegressionJune<-lm(TuesdaydatafilteredJune$temperature_C~TuesdaydatafilteredJune$year4)
 summary(TuesdayLinearRegressionJune)
 ```
->The Tuesday Lake surface data for the month of June does not display a significant trend because the p-value is 0.992, which is greater than 0.05. 
+>Temperature decreases 0.02 degrees per year. 0.02*33 years of data=0.66, so there is a 0.66 degree decrease over the period of study for June. 
 
 ### Linear Regression for July
 ```{r}
 TuesdayLinearRegressionJuly<-lm(TuesdaydatafilteredJuly$temperature_C~TuesdaydatafilteredJuly$year4)
 summary(TuesdayLinearRegressionJuly)
 ```
->The Temperature increases 0.04 degrees per year. 0.04*33 years of data=1.32 so there is a 1.32 degree increase over the period of study for July. This is significant because the p-value is 0.0569, which is close to 0.05. 
+>Temperature increases 0.002 degrees per year. 0.002*33 years of data=0.066, so there is a 0.066 degree increase over the period of study for July.
 
 ### Linear Regression for August
 ```{r}
 TuesdayLinearRegressionAugust<-lm(TuesdaydatafilteredAugust$temperature_C~TuesdaydatafilteredAugust$year4)
 summary(TuesdayLinearRegressionAugust)
 ```
-> The Tuesday Lake surface data for the month of August is not a significant trend because the p-value is 0.15, which is greater than 0.05. 
+>Temperature increases 0.06 degrees per year. 0.06*33 years of data=1.98 degree increase for the month of August. 
 
-# Tuesday Surface Plot
+# Plot
 ```{r, fig.width=8, fig.height=10, warning=FALSE, message=FALSE}
 library(scales)
-TuesdaySurfacePlot<- ggplot(Tuesdaydatafilteredsummer, aes(x = sampledate, y = temperature_C)) +
-  geom_point(color="hotpink2")+
+TuesdaySurfacePlot<- ggplot(Tuesdaydatafiltered, aes(x = sampledate, y = temperature_C)) +
+  geom_point(color="hotpink4")+
   geom_smooth(se=FALSE, method=lm, color="black")+ 
   gabytheme+
   facet_grid(rows=vars(Month)) +
-  labs(title="The Effect of Sample Date on Tuesday Lake Surface Temperatures", 
-       y= expression("Temperature "(degree*C)), x= "Sample Date")+
+  labs(title="The Effect of Sample Date on Tuesday Lake Surface Temperatures",  y= expression("Temperature "(degree*C)), x= "Sample Date")+
    scale_x_date(labels = date_format("%y"), 
                breaks = date_breaks("1 year")) +
   scale_y_continuous(breaks=seq(13, 26, by = 1))
@@ -296,4 +281,4 @@ print(TuesdaySurfacePlot)
 
 12. How do your results compare to those we found in class for Paul Lake? Do similar trends exist for both lakes?
 
-> I noticed that the geom_smooth layer, or the linear regression line, displayed similar trends to the Paul Lake graph's linear regression line in class. In my Tuesday Lake graph, for May, the linear regression line shows a slightly positive correlation, with it sitting between 16-17 degrees Celsius on the Y-axis. For June, the linear regression line does not have a correlation, with it sitting around 20.5 degrees Celsius on the Y axis. For July, the linear regression line has a slightly positive correlation, with it sitting between 22.5 degrres Celsius and 23.5 on the Y axis. For August, the linear regression line has a slight positive correlation with it sitting between 21.5 and 22.5 on the y-axis. A similar trend was present in the Tuesday Lake graph, where the average temperatures increase from May to July, and then decrease slightly in August. This would follow seasonal trends for solar radiation. 
+> 
