@@ -22,10 +22,6 @@ What are the major water quality impairments experienced in lakes?
 >Industrial contaminants
 
 
-
-
-
-
 ## Session Set Up
 
 ```{r}
@@ -55,8 +51,8 @@ https://cont-limno.github.io/LAGOSNE/articles/lagosne_structure.html
 
 ```{r}
 # Load LAGOSNE data into R session
-LAGOSdata <- lagosne_load()
-names(LAGOSdata)
+#LAGOSdata <- lagosne_load()
+#names(LAGOSdata)
 
 # If the package installation and data download has not worked, use this code: 
 load(file = "/Users/gabrielagarcia/Desktop/Hydrologic Data Analysis/Hydrologic_Data_Analysis/Data/Raw/LAGOSdata.rda")
@@ -76,9 +72,6 @@ LAGOSlocus$lagoslakeid <- as.factor(LAGOSlocus$lagoslakeid)
 LAGOSnutrient$lagoslakeid <- as.factor(LAGOSnutrient$lagoslakeid)
 
 ```
-
-
-
 
 
 ## Wrangling data frames in LAGOSNE
@@ -258,12 +251,14 @@ LAGOStrophic$trophic.class <-
 
 ```
 
-
-# LAGOStrophic$season <- 
-#   factor(LAGOStrophic$season,
-#          levels = c("Spring", "Summer", "Fall", "Winter"))
+```{r}
+LAGOStrophic$season <- 
+  factor(LAGOStrophic$season,
+         levels = c("Spring", "Summer", "Fall", "Winter"))
 
 #scales::show_col(colormap(colormap = colormaps$magma, nshades=16))
+```
+
 
 
 Now let's compare TSI values calculated from chl, secchi depth, and TP. If these were all perfectly equivalent metrics, all points should line up on the 1:1 line. 
@@ -276,7 +271,9 @@ chlvssecchi <- ggplot(LAGOStrophic, aes(x = TSI.chl, y = TSI.secchi)) +
   geom_abline(slope = 1, intercept = 0) 
 print(chlvssecchi)
 ```
+ > If every calculation based on cl and secchi depth was exactly the same, they'd all fall on the one-to-one line, which isn't the case for this data set. We see more points below the line, so the trophic state indices, like cholorphyll, predicts a higher trophic state than secchi depth. 
   
+  # Total Phosphorus
 ```{r}
 chlvstp <- ggplot(LAGOStrophic, aes(x = TSI.chl, y = TSI.tp)) +
   geom_point(alpha = 0.1, color = "#ec6163ff") + 
@@ -285,21 +282,23 @@ chlvstp <- ggplot(LAGOStrophic, aes(x = TSI.chl, y = TSI.tp)) +
   geom_abline(slope = 1, intercept = 0)  
 print(chlvstp)
 ```
-  
 
 
 What is the observed relationship, and how does it depart from the 1:1 relationship? What do values above or below the 1:1 line tell us about the conditions present in a lake?
 
-> 
+ >This graph has similar releationship-most points lie beneath the 1:1 line. The bands are associated with specific values because we have integers on the x-axis instead of continuous values. 
+
+>The Chlorophyll concentrations are higher than we'd expect based on the total phosphorus concentrations. This sometimes occurs in middle of sumemr when there's a lot of biomass that takes up a lot of dissolved phosphorus in the water. It also might mean we have a large standing stock of algae in the water. 
 
 ### Comparing TSI across states
-Here are three different ways to envision TSI across the states in the LAGOS-NE database. 
+Here are three different ways to envision TSI across the 17 Lagos states in the LAGOS-NE database. 
 ```{r}
 stateTSIviolin <- ggplot(LAGOStrophic, aes(x = state, y = TSI.chl)) +
   geom_violin(draw_quantiles = 0.50)
 print(stateTSIviolin)
   
 ```
+>Total extent from top to bottom of violin plot represents the range. The width of our violin represents the density of points.A fat violin plot-points centered around the wide part. Violin plots can reveal more information than box plots do.
 
 ```{r}
 stateTSIbar <- ggplot(LAGOStrophic, aes(x = state, fill = trophic.class)) +
@@ -309,11 +308,18 @@ stateTSIbar <- ggplot(LAGOStrophic, aes(x = state, fill = trophic.class)) +
   scale_fill_viridis_d(option = "magma", begin = 0.2, end = 0.8, direction = -1)
 print(stateTSIbar)
 ```
+>Massachussetts has very few observations. If we go back to violin plot for MA, we see truncation of MA's values at the bottom of the violin. This is why it's important to do several types of visualizations for the same data. 
+
+TSI values correspond to the following trophic states: 
+**0-40**: Oligotrophic
+**40-50**: Mesotrophic
+**50-70**: Eutrophic
+**70-100**: Hypereutrophic
 
 
-```{r}
+```{r, fig.width=10, fig.height=10}
 stateTSIjitter <- ggplot(LAGOStrophic, aes(x = state, y = TSI.chl, color = season)) +
-  geom_rect(xmin = -1, xmax = 19, ymin = 0, ymax = 40,
+  geom_rect(xmin = -1, xmax = 19, ymin = 0, ymax = 40, ###these are dimensions of geom_rect. xmin=-1 to fill up plot on left hand side. 
             fill = "gray90", color = "gray90") +
   geom_rect(xmin = -1, xmax = 19, ymin = 40, ymax = 50,
             fill = "gray80", color = "gray80") +

@@ -31,8 +31,6 @@ setwd("/Users/gabrielagarcia/Desktop/Hydrologic Data Analysis/Hydrologic_Data_An
 # load packages
 library(tidyverse)
 library(lubridate)
-
-
 ```
 
 # Load data

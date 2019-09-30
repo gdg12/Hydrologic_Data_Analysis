@@ -289,10 +289,6 @@ Fcoli.plot7 <- ggplot(microb.dat, aes(x = Date)) +
 print(Fcoli.plot7)
 ```
 
-```{r}
-
-```
-
 
 ## Combined Sewer Overflows (CSOs)
 
