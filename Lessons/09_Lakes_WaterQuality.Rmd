@@ -151,7 +151,7 @@ class(LAGOSnutrient$sampledate)
 ```
 
 
-## Create data frame for our trophic index 
+## Wrangle and Create data frame for our trophic index 
 ```{r, message=FALSE}
 LAGOStrophic <- 
   left_join(LAGOSnutrient, LAGOSlocations, by = "lagoslakeid") %>%  ###left join of lagosnutrient and LAGOS locations by lagoslakeid
@@ -180,8 +180,7 @@ levels(LAGOStrophic$season) <- c("Winter", "Spring", "Summer", "Fall")
 
 # Let's look at observations of chl, secchi depth, and TP seasonally and over the period of study.
 ```{r}
-chlbymonth <-  
-ggplot(LAGOStrophic, 
+chlbymonth <-  ggplot(LAGOStrophic, 
        aes(x = as.factor(samplemonth), y = chla, color = sampleyear)) +
   geom_jitter(alpha = 0.2) +
   labs(x = "Month", y = expression(Chlorophyll ~ a ~ (mu*g / L)), color = "Year") +
@@ -190,7 +189,7 @@ print(chlbymonth)
 
 ```
 >geom_jitter spreads out the points so you can see the data better. 
->Highest cholorphyll concentrationss are present in the sumemr months due to higher temperatures, more sunlight, and potentially more nutrients(could vary on seasonal scales). There are also more observations in the summer time. It also looks like we used to do more winter sampling than we do now. 
+>Highest cholorphyll concentrations are present in the summer months due to higher temperatures, more sunlight, and potentially more nutrients(could vary on seasonal scales). There are also more observations in the summer time. It also looks like we used to do more winter sampling than we do now. 
 
 # Same Plot but with Secchi Depth
 ```{r}
@@ -236,7 +235,7 @@ LAGOStrophic <-
          TSI.chl = round(10*(6 - (2.04 - 0.68*log(chla)/log(2)))),
          TSI.secchi = round(10*(6 - (log(secchi)/log(2)))), 
          TSI.tp = round(10*(6 - (log(48/tp)/log(2)))), 
-         trophic.class = ###Create trophic class based on the chlorophyll column. We chose chlorphyll over the others b/c of sechhi depth errors, and chlorophyll is the most direct productivity measurement.  
+         trophic.class.cl = ###Create trophic class based on the chlorophyll column. We chose chlorphyll over the others b/c of sechhi depth errors, and chlorophyll is the most direct productivity measurement.  
             ifelse(TSI.chl < 40, "Oligotrophic", 
                    ifelse(TSI.chl < 50, "Mesotrophic",
                           ifelse(TSI.chl < 70, "Eutrophic", "Hypereutrophic"))))
