@@ -92,37 +92,46 @@ LAGOSNutrient$lagoslakeid<-as.factor(LAGOSNutrient$lagoslakeid)
 ```
 
 ```{r}
-LagosLocations<-left_join(LAGOSlocus, LAGOSState, by="state_zoneid")
+LAGOSLocations<-left_join(LAGOSlocus, LAGOSState, by="state_zoneid")
 ```
-
-
-
-
-
-
-
-
 
 ```{r}
-library(tidyr)
-nutrients.dat<- nutrients.dat %>%
-  select(Date = sample_dt, 
-         Parameter=parm_cd, 
-         Value = result_va) %>%
-  group_by(Date, Parameter) %>%
-  summarize(Value = mean(Value)) %>%
-  spread(key = Parameter, value = Value)%>%
-  rename('TotalNitrogen_mgl-N'= '00600',
-         'TotalPhosphorus_mgl-P' = '00665')
+LAGOSNutrientsPenultimate<-left_join(LAGOSNutrient, LAGOSLocations, by="lagoslakeid" )
 ```
+
+```{r}
+library(tidyverse)
+BufferFrame<-LAGOSLanduse%>%select(lagoslakeid, buffer500m_nlcd1992_pct_81, buffer500m_nlcd1992_pct_82)
+```
+
+```{r}
+BufferFrame$lagoslakeid<-as.factor(BufferFrame$lagoslakeid)
+```
+
+
+```{r, warning=FALSE}
+library(lubridate)
+LAGOSNutrientsFinal<-left_join(LAGOSNutrientsPenultimate, BufferFrame, by="lagoslakeid")%>%
+  select(chla, doc, toc, tn, tp, secchi, buffer500m_nlcd1992_pct_81, buffer500m_nlcd1992_pct_82)%>%
+    drop_na(chla:buffer500m_nlcd1992_pct_82)
+```
+
+
 
 Examine potential correlations among your predictor variables. If your predictor variables are highly correlated with each other, your model will suffer from *multicollinearity,* essentially that two or more of your predictor variables provide redundant information. Model fit and accuracy of model coefficients suffer when multicollinearity is present. 
 
+>A correlation matrix is a table of correlation coefficients for a set of variables used to determine if a relationship exists between the variables. The coefficient indicates both the strength of the relationship as well as the direction (positive vs. negative correlations). In this post I show you how to calculate and visualize a correlation matrix using R.
 1. Create a correlation plot for your 7 variables of interest (TN, TP, and the five predictor variables). What patterns do you see? (hint: function `corrplot` in the corrplot package. I like to use `upper = "ellipse"` inside the function).
 
-```{r}
+>Make matrix with  correlaiton coefficients in it 
 
+```{r, fig.width=5, fig.height=5}
+library(corrplot)
+
+NutrientCorrelationMatrix<-cor(LAGOSNutrientsFinal)
+corrplot(NutrientCorrelationMatrix)
 ```
+
 
 What patterns do you see?
 
@@ -169,4 +178,10 @@ Interpret the effect of each variable on TN or TP (e.g., "TN increases by one un
 How much variance in TN and TP do your models account for?
 
 >
+
+
+```{r}
+write.csv("LAGOSnutrient", file="LAGOSnutrient.csv" )
+getwd()
+```
 
