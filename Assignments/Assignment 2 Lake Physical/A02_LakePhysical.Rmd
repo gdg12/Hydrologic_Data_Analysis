@@ -153,7 +153,6 @@ print(PhysicalProfiles19892014)
   dplyr::filter(year4==2016)
   
 PeterPaulTuesdayJulyFinal<-PeterPaulTuesdayJuly[c(615:677),]
-
 ```
 
 

@@ -46,10 +46,9 @@ Time series datasets come with several caveats, which need to be addressed in or
 * **Data gaps**: Data are not collected at regular intervals, necessitating *interpolation* between measurements.
 There are often gaps between monitoring periods. For many time series analyses, we need equally spaced points. 
 
-* **Seasonality**: Cyclic patterns in variables occur at regular intervals, impeding clear interpretation of a monotonic (unidirectional) trend. Ex. We can assume that summer temperatures 
+* **Seasonality**: Cyclic patterns in variables occur at regular intervals, impeding clear interpretation of a monotonic (unidirectional) trend. Ex. We can assume that summer temperatures are higher.
 
 * **Heteroscedasticity**: The variance of the time series is not constant over time
-
 
 * **Covariance**: the covariance of the time series is not constant over time.
 Many of these models assume that the variance and covariance are similar over the time-->heteroschedasticity. 
