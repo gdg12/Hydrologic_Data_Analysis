@@ -5,7 +5,7 @@ date: "Fall 2019"
 output: html_document
 geometry: margin=2.54cm
 editor_options: 
-  chunk_output_type: console
+  chunk_output_type: inline
 ---
 
 ## Lesson Objectives
@@ -17,14 +17,16 @@ editor_options:
 
 High frequency data is usually defined as frequencies significantly lower than daily (e.g. 5-minute, 15-minute, 1 hr etc). What types of hydrological and biological processes happen on this timescale that we might want to investigate?
 
->
-
+>A short storm event could have large impact on biological and physical processes
+>Temperature-->big daily change or delta due to sunlight 
+>DO content--> fluctuates throughout the day due to sunlight
+>Contaminant transport
 
 ## Session Set Up
 
 ```{r, message = FALSE}
 getwd()
-
+install.packages("EcoHydRology")
 packages <- c(
   "dataRetrieval", "tidyverse", "cowplot", "EcoHydRology", "xts", "dygraphs"
   )
@@ -35,17 +37,19 @@ theme_set(theme_classic(base_size = 12))
 
 ## Pull Data
 
-```{r download data}
-
+### Third Fork Creek
+```{r}
 dischargedatTFC2018 <- readNWISuv(
-  site = "02097280", #Third Fork Creek at Woodcroft Parkway Near Blands
+  site = "02097280", #Third Fork Creek at Woodcroft Parkway Near Blands NC
   parameterCd = "00060",
   startDate = "2018-01-01", 
   endDate = "2019-01-01"
   ) %>% 
   renameNWISColumns()
+```
 
-
+### Ellerbe Creek 
+```{r}
 dischargedatEC2018 <- readNWISuv(
   site = "0208675010", #Ellerbe Creek at Club Boulevard at Durham, NC
   parameterCd = "00060", 
@@ -53,8 +57,28 @@ dischargedatEC2018 <- readNWISuv(
   endDate = "2019-01-01"
   ) %>% 
   renameNWISColumns()
+```
+>Flow_Inst is instantaenous flow values
+we also have a tz_cd-->time zone code
 
 
+### Look at structure of DF
+```{r}
+str(dischargedatEC2018)
+```
+>Date is in POSIXct format. No matter what part of country you pull data from, the time will be given to us in UTC-->Universal Time Coordinated. This allows us to have a standardized unit for all of the data points being taken, and we won't have to worry if the USGS uses daylight saving times in their data collection. 
+
+>We'll be using high frequency data for our projects
+
+>We want to separate baseflow from quickflow. Baseflow (also called drought flow, groundwater recession flow, low flow, low-water flow, low-water discharge and sustained or fair-weather runoff) is the portion of streamflow delayed shallow subsurface flow. It should not be confused with groundwater flow. Quickflow is the part of a storm rainfall which moves quickly to a stream channel via surface runoff or interflow, and forms a flood wave in the channel. 
+
+>How does water enter the river channel
+-overland flow (could be flowing over the ground into a drain, which flows into a pipe and eventually into a stream)
+-groundwater (aquifers at different depths will drain into streams at different rates)
+-fall into the river channel 
+
+## Plot Ellerbe and Third Fork Creek Discharge
+```{r}
 plot_grid(
   ggplot(dischargedatTFC2018, aes(x = dateTime, y = Flow_Inst)) +
     geom_line() + 
@@ -66,9 +90,9 @@ plot_grid(
     ggtitle("Ellerbe Creek"),
   ncol = 1
 )
-          
-
 ```
+>Storms are visualized by peaks of discharge in the  plot. Rising limb=when the peak increases rapidly-->this is a combination of overland flow plus water that has been flowing through the ground
+>Baseflow are the troughs-->higher in the winter and early spring, lower in the summer, and then increases again in the fall. 
 
 The shape and size of river hydrographs following rain events can tell us how water moves through a watershed. Once rain falls, how does water get to a stream? What would the streamflow do?
 
@@ -77,22 +101,33 @@ The shape and size of river hydrographs following rain events can tell us how wa
 
 _"Hydrograph separation is one of the most desperate analysis techniques in use in hydrology" - Hewlett & Hibbert 1967_
 
-
+## Baseflow Separation Function
 ```{r baseflowseparation}
 TFCbaseflow <- BaseflowSeparation(
-  dischargedatTFC2018$Flow_Inst, 
+  dischargedatTFC2018$Flow_Inst, ###instantaneous discharge flow
   filter_parameter = 0.925, 
   passes = 3
   )
+```
+>This function reads streamflow dataset and produce a baseflow dataset. Output is a 2 column dataframe with nrow=length of input streamflow data. Passes=The number of times you want the filter to pass over your data. 
+>bf=baseflow, qf=quickflow
 
+```{r}
 TFC2018 <- cbind(dischargedatTFC2018, TFCbaseflow)
+```
 
+# Plot of Third 
+```{r}
 ggplot(TFC2018, aes(x = dateTime, y = Flow_Inst)) + 
   geom_line() +
-  # scale_y_log10() +
+   scale_y_log10() +
   geom_line(mapping = aes(x = dateTime, y = bt), color = "darkorange4") +
   geom_line(mapping = aes(x = dateTime, y = qft), color = "steelblue4")
+```
+>If there's no storm , it averages 0 for the quick flow portion. This is a bad represtion. 
 
+## Dygraph of Third Fork Creek 
+```{r}
 dygraph(
   cbind(
     Flow = with(TFC2018, xts(Flow_Inst, order.by = dateTime)), 
@@ -101,65 +136,198 @@ dygraph(
     )
   ) %>% 
   dyRangeSelector()
+```
+>Quickflow is the overland flow that goes directly to the stream channel. This arrives in the stream before groundwater percolating through soil  to get to the stream=baseflow. This is why quickflow gets to the stream instanenously. 
+>9/17/2018-The sept 16 storm event raised baseflow-->groundwater tables higher than normal that are contributing to the stream. The quickflow portion is smaller than baseflow and total flow. 
+>Sept 17 event-->There's more water getting to stream by way of quickflow, since the area under the curve for quickflow is bigger. Impermeable surfaces leads to more overland flow(quickflow) in the streams. 
 
+```{r}
+diff(TFC2018$dateTime)
+```
+>Wheb you make POSIXC a numeric value, it's a number of seconds since some point in time
+
+
+# Calculate how much water came out as quickflow and how much water came out as baseflow
+```{r}
 Export <- TFC2018 %>%
-  mutate(timestep = c(diff(as.numeric(dateTime)), NA_real_),
+  mutate(timestep = c(diff(as.numeric(dateTime)), NA_real_), #find out time difference btwn each of the timestamps, Most timestamps are 15 min but there are a couple gaps. 
          baseflowexport = bt * timestep,
-         quickflowexport = qft * timestep) %>%
+         quickflowexport = qft * timestep) %>% #ft^3/sec * seconds elapsed to just get the volume
+
   summarize(BaseflowExport_cf = sum(baseflowexport, na.rm = T),
             QuickflowExport_cf = sum(quickflowexport, na.rm = T),
             TotalExport_cf = BaseflowExport_cf + QuickflowExport_cf)
   
 ```
+>Datetime is in POSIXCT format. 
+
+
+
 
 What percentage of water is exported from this watershed as baseflow? What percentage as quickflow?
 
-> 
+### Baseflow
+```{r}
+Export$Baseflow/Export$TotalExport_cf*100
+```
 
-Repeat this analysis for Ellerbe Creek. How do the percentages compare?
+### Quickflow
+```{r}
+Export$QuickflowExport_cf/Export$TotalExport_cf*100
+```
+> It's about a 50/50 split, but we have a little more baseflow coming into Third Fork Creek. 
 
->
+# Repeat this analysis for Ellerbe Creek. How do the percentages compare?
+```{r}
+
+Ellerbebaseflow <- BaseflowSeparation(
+  dischargedatEC2018$Flow_Inst, 
+  filter_parameter = 0.925, 
+  passes = 3)
+```
+
+
+```{r}
+EC2018 <- cbind(dischargedatEC2018, Ellerbebaseflow)
+
+ExportEllerbe <- EC2018 %>%
+  mutate(timestep = c(diff(as.numeric(dateTime)), NA_real_), 
+         baseflowexport = bt * timestep,
+         quickflowexport = qft * timestep) %>% 
+  summarize(BaseflowExport_cf = sum(baseflowexport, na.rm = T),
+            QuickflowExport_cf = sum(quickflowexport, na.rm = T),
+            TotalExport_cf = BaseflowExport_cf + QuickflowExport_cf)
+```
+
+### Baseflow 
+```{r}
+ExportEllerbe$Baseflow/ExportEllerbe$TotalExport_cf*100
+```
+>43.41%
+
+### Quickflow
+```{r}
+ExportEllerbe$QuickflowExport_cf/ExportEllerbe$TotalExport_cf*100
+```
+>56.6%
+
 
 What does this mean physically about the watershed?
 
->
+>Ellerbe Creek has more quickflow, but TC Creek has more baseflow.This, Ellerbe Creek has more overland flow. EC might have more urban surfaces, roads, houses, while TC Creek might have more open area.They both are urban streams, however.  
 
-## Hydrologic Flashiness
 
-A "flashy" stream increases in flow faster following a precipitation event. 
+# Hydrologic Flashiness
+
+A "flashy" stream increases in stormflow much faster following a precipitation event. Flashiness is how responsive a stream is to precipitation. 
+Factors that contribute to flashiness: quickflow
 
 Refering to our previous work with baseflow separation, would you expect flashiness to increase or decrease with urbanization?
 
-> 
+> Flashiness would increase with urbanization-->more impervious surfaces in urban areas means more overland flow. 
 
-What do you think "urban stream syndrom" refers to?
+What do you think "urban stream syndrome" refers to?
 
->
+>Hydrologic flashiness is a symptom of urban stream syndrome. Urban streams obtain a lot of water from pipes. If we have a lot of big, fast floods, erosion of the stream channel will occur. Urban streams are deeper/more incised due to erosion. 
 
-The Richards-Baker Index is an index of how flashy a stream is. It is calculated as $$RBI = (\sum_{j = 1}^n |Q_j - Q_{j-1}| / \sum_{j = 1}^n Q_j) / Catchment Area$$
+The Richards-Baker Index is an quantitative index of how flashy a stream is. It is calculated as 
+$$RBI = (\sum_{j = 1}^n |Q_j - Q_{j-1}| / \sum_{j = 1}^n Q_j) / Catchment Area$$
 
+>Q is flow, j is time stamp 1. The first time stamp of the whole series is  0, and we'll start at time stamp 1. 
+
+### Pull in Metadata for Third Fork Creek
 ```{r Flashiness}
 TFCsitedata <- readNWISsite(site = "02097280")
 TFC.catchment.size <- TFCsitedata$drain_area_va #square miles
 
+```
+>Smaller catchment areas are flashier because it takes less time fro water to reach the stream. Bigger catchment area will have less immediate changes than a smaller catchment. 
+>drain_area_va is the catchment size
+
+## Calculate Flashiness Index Value of Third Fork Creek 
+```{r}
 RBI_TFC2018 <- (
   sum(abs(diff(dischargedatTFC2018$Flow_Inst))) / 
     sum(dischargedatTFC2018$Flow_Inst[-1])
   ) / TFC.catchment.size
+```
+>Flashiness Index Value of 0.00303
 
+```{r}
+library(dataRetrieval)
 ECsitedata <- readNWISsite(site = "0208675010")
 EC.catchment.size <- ECsitedata$drain_area_va #square miles
 
+```
+
+## Calculate Flashiness Index of Ellerbe Creek 
+```{r}
 RBI_EC2018 <- (
   sum(abs(diff(dischargedatEC2018$Flow_Inst))) / 
     sum(dischargedatEC2018$Flow_Inst[-1])
   ) / EC.catchment.size
-
 ```
+>Flashiness Index Value of 0.0122
+
 
 Which stream is flashier?
 
->
+>Ellerbe Creek has a higher flashiness index, and thus faster hydrology changes than Third Fork Creek. 
+
+
+
+# Find our own Watershed and repeat the above analyses 
+```{r}
+NCsites<-whatNWISsites(parameterCd="00060", statecd="NC")
+NCsites
+```
+>Going with Site 
+
+
+## Read in Site 02184240 Data
+```{r}
+library(tidyr)
+HorsepastureDischarge2018 <- readNWISuv(
+  site = "02184240", 
+  parameterCd = "00060",
+  startDate = "", 
+  endDate = ""
+  ) %>% 
+  renameNWISColumns()
+```
+
+
+
+## Baseflow Separation Function
+```{r baseflowseparation}
+library(EcoHydRology)
+Horsepasturebaseflow <- BaseflowSeparation(
+HorsepastureDischarge2018$Flow_Inst, ###instantaneous discharge flow
+  filter_parameter = 0.925, 
+  passes = 3
+  )
+```
+
+
+```{r}
+TFC2018 <- cbind(dischargedatTFC2018, TFCbaseflow)
+```
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 ## Chemical Flashiness
 
@@ -174,13 +342,19 @@ CCdat <- readNWISuv(
   ) %>%
   renameNWISColumns() %>%
   rename(Nitrate_mgl = 6)
+```
 
+
+```{r}
 ggplot(CCdat,
        aes(x = Flow_Inst, y = Nitrate_mgl)) +
   geom_point() +
   scale_x_log10() +
   scale_y_log10()
 
+```
+
+```{r}
 
 Potdat <- readNWISuv(
   site = "01646500", # POTOMAC RIVER NEAR WASH, DC LITTLE FALLS PUMP STA
@@ -190,13 +364,16 @@ Potdat <- readNWISuv(
   ) %>% 
   renameNWISColumns() %>%
   rename(Nitrate_mgl = 6)
+```
 
+```{r}
 ggplot(Potdat,
        aes(x = Flow_Inst, y = Nitrate_mgl)) +
   geom_point() +
   scale_x_log10() +
   scale_y_log10()
 ```
+
 
 Which of these rivers is more chemostatic?
 

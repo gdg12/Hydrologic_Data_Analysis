@@ -1,7 +1,7 @@
 ---
 title: 'Assignment 6: Time Series Analysis'
 author: "Gaby Garcia"
-geometry: margin=2.54cm
+geometry: margin=2.54 cm
 output:
   pdf_document: default
   word_document: default
@@ -82,25 +82,22 @@ names(EnoRiverDischarge)[4:5] <- c("Discharge", "Approval.Code")
 class(EnoRiverDischarge$Date)
 ```
 
-# Initial Eno River Discharge over Time Plot
+# Eno River Discharge over Time Plot
 ```{r, fig.width=10}
+library(ggplot2)
 library(scales)
 EnoRiverPlot <- 
   ggplot(EnoRiverDischarge, aes(x = Date)) +
-  geom_line(aes(y=Discharge, color="#cd5555"), show.legend=FALSE) +
+  geom_line(aes(y=Discharge, color=000000), show.legend=FALSE) +
   labs(title="Eno River Discharge over Time", x = "Year", y = expression("Discharge (ft"^3*"/s)")) + 
   theme(plot.title = element_text(margin = margin(b = -10), size = 12), 
        axis.title.x = element_blank())+
   scale_y_continuous(breaks=seq(0,10000, by = 2000))+
    scale_x_date(labels = date_format("%Y"), breaks = date_breaks("5 years"))+
   gabytheme
-print(EnoRiverPlot)
 
+print(EnoRiverPlot)
 ```
-6. Plot discharge over time with geom_line. Make sure axis labels are formatted appropriately.
-7. Create a time series of discharge
-8. Decompose the time series using the `stl` function.
-9. Visualize the decomposed time series.
 
 
 ### Check for data gaps
@@ -114,31 +111,14 @@ table(diff(EnoRiverDischarge$Date))
 EnoDataGap<-seq(min(EnoRiverDischarge$Date), max(EnoRiverDischarge$Date), by=1)
 EnoDataGap[!EnoDataGap %in% EnoRiverDischarge$Date]
 ```
->Data gap between 10/21/2017 and 11/27/2017. Time series objects requires equispaced data. 
+>Data gap between 10/21/2017 and 11/27/2017. Time series objects requires equispaced data, but I will ignore the gap because there is only one. 
 
-## Remove data gap time period
-```{r}
-EnoRiverDischargeNoGap<-filter(EnoRiverDischarge, Date<"2017-10-21")
-```
 
-# Replot Eno River Discharge Data w/o Gap
-```{r, fig.width=13}
-library(scales)
-EnoRiverPlotNoGap <- 
-  ggplot(EnoRiverDischargeNoGap, aes(x = Date, y = Discharge)) +
-  geom_line(aes(y=Discharge, color="#cd5555"), show.legend=FALSE) +
-  labs(title="Eno River Discharge over Time", x = "Year", y = expression("Discharge (ft"^3*"/s)")) + 
-  theme(axis.text.x=element_text(size=12))+
-  scale_y_continuous(breaks=seq(0,10000, by = 2000))+
-   scale_x_date(labels = date_format("%Y"), breaks = date_breaks("5 years"))+
-  gabytheme
-print(EnoRiverPlotNoGap)
-```
 
 
 ## Create Discharge Time Series
 ```{r}
-EnoRiver_ts <- ts(EnoRiverDischargeNoGap[[4]], frequency = 365) #select 4th column-discharge
+EnoRiver_ts <- ts(EnoRiverDischarge[[4]], frequency = 365) #select 4th column-discharge
 ```
 
 ## Decompose the Discharge Time Series
@@ -161,14 +141,14 @@ ClearCreekDischarge <- readNWISdv(siteNumbers = "06719505",
 names(ClearCreekDischarge)[4:5] <- c("Discharge", "Approval.Code")
 ClearCreek_ts <- ts(ClearCreekDischarge[[4]], frequency = 365)
 ClearCreek_Decomposed <- stl(ClearCreek_ts, s.window = "periodic")
-ClearCreek_Components <- as.data.frame(ClearCreek_Decomposed$time.series[,1:3]) ###Pull in the timeseries list to create a dataframe
-
+ClearCreek_Components <- as.data.frame(ClearCreek_Decomposed$time.series[,1:3]) 
 
 ClearCreek_Components <- mutate(ClearCreek_Components,
                       Observed = ClearCreekDischarge$Discharge,     
-                      Date = ClearCreekDischarge$Date) ##add in date so we can look at these over time
+                      Date = ClearCreekDischarge$Date)
 plot(ClearCreek_Decomposed)
 ```
+
 
 # Clear Creek Trend Plot
 ```{r, fig.width=12}
@@ -199,12 +179,12 @@ print(ClearCreek_ComponentsSeasonalPlot)
 
 # Extract Eno River Components
 ```{r}
-EnoRiver_Components <- as.data.frame(EnoRiver_Decomposed$time.series[,1:3]) ###Pull in the timeseries list to create a dataframe
+EnoRiver_Components <- as.data.frame(EnoRiver_Decomposed$time.series[,1:3]) 
 
 
 EnoRiver_Components <- mutate(EnoRiver_Components,
-                      Observed = EnoRiverDischargeNoGap$Discharge,     
-                      Date = EnoRiverDischargeNoGap$Date) ##add in date so we can look at these over time
+                      Observed = EnoRiverDischarge$Discharge,     
+                      Date = EnoRiverDischarge$Date) 
 ```
 >Observed=discharge
 
@@ -254,8 +234,8 @@ SeasonalityPlotGrid<-plot_grid(EnoRiver_ComponentsSeasonalPlot, ClearCreek_Compo
             nrow = 2) 
 print(SeasonalityPlotGrid)
 ```
->clear creek fed snowmelt 
-> Seasonal: There is visible seasonality in both the Eno River and Clear Creek datasets. While the Clear Creek data features one large peak around the springtime of each year (presumably the effect of snowmelt entering the river and increasing discharge), the Eno River data actually has two seasonal peaks. There is a peak of larger magnitude also around the springtime of each year, but there is a peak of smaller magnitude in between each larger peak, presumably around the wintertime.
+
+> Seasonal: There is visible seasonality in both the Eno River and Clear Creek datasets. While the Clear Creek data features one large peak around the springtime of each year (presumably the effect of snowmelt entering the river during the late springtime and increasing river discharge), the Eno River data actually has two seasonal peaks. There is a peak of larger magnitude also around the first few months of each year, but there is a peak of smaller magnitude in between each larger peak, presumably around the spring/summertime. The seasonal component of the Eno River dataset is also more variable, likely because Eno River depends on precipitation in the form of rain, which can be more variable than Clear Creek (which is presumably fed by precipitation in the form of snow). 
 
 > Trend: For both the Eno River and Clear Creek datasets, the trend peaks correspond to high river discharge events. It is worth noting that Eno River has a larger range in magnitude of river discharge (0.08-9900 cfs) than Clear Creek (12.0-2300 cfs), yet Eno River's trend line has peaks of smaller magnitude than the Clear Creek trend line. The Eno River has more data points than the Clear Creek dataset.  Both trend lines for Eno River and Clear Creek are always positive, although Eno River's trend line remains close to 0. 
 
@@ -293,26 +273,27 @@ summary(ClearCreekMKtrend)
 
 13. Is there an overall monotonic trend in discharge over time? If so, is it positive or negative?
 
-> According to the Mann-Kendall test, we fail to reject the null hypothesis that there is no monotonic trend in the Clear Creek discharge over time (Mann-Kendall test, Z=4.39, p=0.09719). Because the resultant p-value is >0.05, at a 5% level of significance, we can't conclude that there is a monotonic trend in Clear Creek discharge over time. 
+> According to the Mann-Kendall test, we fail to reject the null hypothesis that there is no monotonic trend in the Clear Creek discharge over time (Mann-Kendall test, Z=4.39, p=0.09719). Because the resultant p-value is >0.05, we can't conclude that there is a monotonic trend in Clear Creek discharge over time. 
 
 
 14. Are there any monthly monotonic trends in discharge over time? If so, during which months do they occur and are they positive or negative?
 
-> According to my summary of the seasonal Mann-Kendall test, we reject the null hypothesis that there is no monotonic trend in the Clear Creek discharge over time, and therefore there is a monotonic trend for both March and April. It appears that Season 4, or the month of April, has a resultant p value=0025081, which is <0.05. 
+> According to my summary of the seasonal Mann-Kendall test, we reject the null hypothesis that there is no monotonic trend in the Clear Creek discharge over time, and therefore there is a monotonic trend for both March (Mann-Kendall Test, z=1.986, p=0.047<0.05) and April (Mann-Kendall Test, z=2.240, p=0.025<0.05). The fact that these months are the most significant correlates to seasonal snowpack melting in Colorado and the resulting discharge into the watershed. 
+
 
 ## Reflection
 15. What are 2-3 conclusions or summary points about time series you learned through your analysis?
 
->
+>Time series graphs are valuable because the variances in data, when collected and compared from year to year, can reveal seasonal fluctuation patterns that can serve as the basis for future forecasting. I also learned that there is unexplained variability (the remainder) that wasn't explained by the seasonal and trend components. 
 
 16. What data, visualizations, and/or models supported your conclusions from 12?
 
-> 
+> The decomposed plots allowed me to visualize the different components of a time series.
 
 17. Did hands-on data analysis impact your learning about time series relative to a theory-based lesson? If so, how?
 
->
+>Yes, I was able to use real-world data to compare seasonality patterns of different rivers in different parts of the country, and substantiate the theoretical lessons that we covered in class. 
 
 18.	How did the real-world data compare with your expectations from theory?
 
->
+>The real-world data is reflective of my theoretical expectations because as expected, different rivers in different geographic locations in the United States exhibit seasonality differently. I also expected to see a greater significance in discharge in the months of March and April due to my knowledge of Colorado and its regular snowmelt season. 
