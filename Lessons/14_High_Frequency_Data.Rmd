@@ -5,7 +5,7 @@ date: "Fall 2019"
 output: html_document
 geometry: margin=2.54cm
 editor_options: 
-  chunk_output_type: console
+  chunk_output_type: inline
 ---
 
 ## Lesson Objectives
@@ -22,35 +22,47 @@ Wednesday we used high-frequency hydrographs to learn about how water flows thro
 
 ## Session Set Up
 
-```{r, message = FALSE}
+```{r, message = FALSE, warning=FALSE}
 getwd()
 
-# install.packages("StreamPULSE")
-# install.packages("streamMetabolizer")
 
-packages <- c(
-  "dataRetrieval", 
-  "tidyverse", 
-  "xts",
-  "dygraphs",
-  "StreamPULSE", 
-  "streamMetabolizer"
-  )
-invisible(
-  suppressPackageStartupMessages(
-    lapply(packages, library, character.only = TRUE)
-    )
-  ) 
+install.packages("streamMetabolizer", dependencies = TRUE, repos=c("https://owi.usgs.gov/R", "https://cran.rstudio.com"))
 
-theme_set(theme_classic(base_size = 12))
+  library(devtools)
+  install_github('streampulse/StreamPULSE')
+  
+#install.packages("shiny")
+ #install.packages("Cairo")
+ library(Cairo)
+  library(dataRetrieval)
+  library(tidyverse)
+  library(xts)
+  library(dygraphs)
+  library(StreamPULSE) 
+  library(streamMetabolizer)
+
 ```
 
+
+```{r}
+gabytheme <- theme_bw(base_size = 22) + 
+  theme(plot.title=element_text(face="bold", size="29", color="IndianRed3", hjust=0.5),
+        axis.title=element_text(size=22, color="black"),
+axis.text = element_text(face="bold", size=18, color = "black"), 
+panel.background=element_rect(fill="white", color="darkblue"), 
+panel.border = element_rect(color = "black", size = 2),
+legend.position = "top", legend.background = element_rect(fill="white", color="black"),
+            legend.key = element_rect(fill="transparent", color="NA"))
+
+theme_set(gabytheme)
+```
 
 
 ## Chemical Flashiness
 
 Chemical concentrations in rivers can be either highly variable with discharge, or "chemostatic", which means the concentration barely changes with discharge. 
 
+### Load in Crane Creek Data and Rename Columns
 ```{r}
 CCdat <- readNWISuv(
   site = "02249500", # CRANE CREEK AT MELBOURNE, FL
@@ -60,14 +72,25 @@ CCdat <- readNWISuv(
   ) %>%
   renameNWISColumns() %>%
   rename(Nitrate_mgl = 6)
+```
 
+# Plot Crane Creek Data
+```{r, fig.height=4, warning=FALSE}
 ggplot(CCdat,
        aes(x = Flow_Inst, y = Nitrate_mgl)) +
   geom_point() +
   scale_x_log10() +
-  scale_y_log10()
+  scale_y_log10()+
+  gabytheme
+```
+>C-Q Plot
+q=flow ,c=concentration
+We're plotting concentration against the flow b/c we want to know how concentration changes with the flow
+A stream that is chemostatic=the concentration of a river does not change with dischrge
+Nitrate concentration is the same for all of the flow we see in the river, while other rivers like the Potomac may have a different relationship. 
 
-
+## Load in Potomac River Data and rename Columns
+```{r}
 Potdat <- readNWISuv(
   site = "01646500", # POTOMAC RIVER NEAR WASH, DC LITTLE FALLS PUMP STA
   parameterCd = c("00060", "99133"), # Discharge in cfs & Nitrate in mg/l NO3-N
@@ -76,7 +99,10 @@ Potdat <- readNWISuv(
   ) %>% 
   renameNWISColumns() %>%
   rename(Nitrate_mgl = 6)
+```
 
+# Plot Potomac River Data
+```{r, fig.height=6, warning=FALSE}
 ggplot(Potdat,
        aes(x = Flow_Inst, y = Nitrate_mgl)) +
   geom_point() +
@@ -84,14 +110,16 @@ ggplot(Potdat,
   scale_y_log10()
 ```
 
+
 Which of these rivers is more chemostatic?
 
->
+>Crane Creek is more chemostatic. 
 
 ## Hysteresis Loops
 
 Hysteresis occurs when the concentration varies with discharge in a different relationship on the rising and falling limbs of a storm. This can be caused by _flushing_ behavior or _dilution_ behavior. 
 
+# Potomac Dygraph
 ```{r}
 dygraph(
   cbind(
@@ -102,66 +130,113 @@ dygraph(
   dySeries("Nitrate", axis = "y2") %>%
   dyRangeSelector()
 ```
+>What happens to nitrate as flow increases? It decreases.
+As Q=flow increases for a storm, nitrate concentration decreases (negative slope). We would call this a diluting storm. 
+
+>If Q increases and  Concentration increases (positive slope), we would call these flushing storms. 
+
+>No slope between nc and Q=chemostatic
+
+>Hysteresis=over the course of an event, your behavior will be diferent at different times over the event. Ex. the relationship between C and Q will be different during the beginning of the storm and the end of the storm. 
+The sources of the water at different times will be coming from different pathways (beginning of storm is quickflow, end of storm is baseflow). 
+
+>If the concentrations in quickflow are higher than concentrations in baseflow, then we'll have higher Nitrate concentrations at the beginning of the storm. 
+
 
 Look at the storm that occured around February 1st. Do you expect this storm to be a flushing or a diluting storm?
 
->
+>Diluting storm-as flow increases, nitrogen concentrations are decreasing. 
 
+## Filter Potomac River data for a specific storm event
 ```{r}
 PotomacStorm <- Potdat %>%
   filter(dateTime > "2016-01-31" & dateTime < "2016-02-14") 
 
+```
+
+# Plot CQ Storm 
+```{r, fig.height=6, fig.width=10}
 ggplot(PotomacStorm, aes(x = Flow_Inst, y = Nitrate_mgl, color = dateTime)) +
-  geom_point() 
+  geom_point() +
+  theme(legend.key.height = unit(1, "cm"),
+        legend.key.width = unit(4, "cm"))
 
 
 ```
+>This is all data for one storm event. We havce C on Y and Q on x-axis. At every discharge, we have two concentrations. 
+
+slope of the rising limb=quickflow
+slope of the falling limb=baseflow
+
+>As time progresses, we have rising limb of storm, flow increasing, dropping concentrations while flow increases again. 
+This is an anti-clockwise hysteresis loop-the rising limb of storm has a lower concentration than the falling limb of the storm. The different between the rising and falling limbs is how we get a hysteresis loop. 
 
 Did this storm exhibit clockwise or counterclockwise hysteresis?
 
->
+>Counterclockwise
 
 Which direction do hysteresis loops slope for diluting storms?
 
->
+>downward or negative 
 
 Which direction do hysteresis loops go for flushing storms?
 
->
+>Upward
+
+
+>Thus, the concentrations of nitrate in quickflow pathways are lower than concentrations of nitrate in baseflow pathways. Baseflow comes from groundwater, quickflow comes from overland flow. There is more nitrate in the groundwater than the overland. 
+
+>If we have a diluting storm, we're more likely to have anti-clockwise hysterisis-less nitrogen concentration in quickflow than in our baseflow. 
+
+>Thus, in flushing storm, nitrate in the system is flushed out-we'll see this in rising limb of storm in quickflow. We get a lot of water pushing solutes out, so we get increases in
 
 ## Using dissolved oxygen to estimate metabolism
 
 What is "ecosystem metabolism"?
 
->
+>Includes gross primary productivity (GPP) and ecosystem respiration (ER) and can be expressed as net ecosystem production (NEP = GPP - ER). Analogous to metabolism within an individual organism, stream metabolism represents how energy is created (primary production) and used (respiration) within an aquatic ecosystem. In heterotrophic ecosystems, GPP:ER is <1 (ecosystem using more energy than it is creating); in autotrophic ecosystems it is >1 (ecosystem creating more energy than it is using).[1] Most streams are heterotrophic.[2] A heterotrophic ecosystem often means that allochthonous (coming from outside the ecosystem) inputs of organic matter, such as leaves or debris fuel ecosystem respiration rates, resulting in respiration greater than production within the ecosystem. However, autochthonous (coming from within the ecosystem) pathways also remain important to metabolism in heterotrophic ecosystems. In an autotrophic ecosystem, conversely, primary production (by algae, macrophytes) exceeds respiration, meaning that ecosystem is producing more organic carbon than it is respiring.
 
 Why would we want to know the *GPP* and *ER* of a river reach?
 
->
-
+>GPP=Gross Primary Productivity (GPP) is the rate at which solar energy is captured in sugar molecules during photosynthesis (energy captured per unit area per unit time). Producers such as plants use some of this energy for metabolism/cellular respiration and some for growth (building tissues).
+>ER=Ecosystem Respiration is the sum of all respiration occurring by the living organisms in a specific ecosystem. It is the operation in which the organisms within a specified ecosystem use the process of respiration to convert organic carbon to carbon dioxide.
+>The amount of material in a stream is an important metric-->might want to know how many trophic levels there are, etc. 
 
 The StreamPulse project is a group of researchers around the world who are measuring oxygen concentrations in streams to determine the GPP and ER of many different types of streams and rivers from around the globe. We will be using data from their website for this class period. This project uses the R package `streamMetabolizer` to compute its estimates of metabolism and allows data download from its site using the `StreamPULSE` R package.
+
 
 ```{r}
 citation('streamMetabolizer')
 ```
-
-```{r}
+# Load Eno River Data
+```{r, warning=FALSE, message=FALSE}
+library(StreamPULSE)
 Enodat <- request_data(
   sitecode = "NC_Eno",
   variables = c('DO_mgL'),
   startdate = "2016-09-15", 
   enddate = "2016-09-20"
   )
+```
 
-Eno.lon <- Enodat[[2]]$lon
+# Clean Data and Convert UTC Time to Solar Time
+```{r}
+library(tidyr)
+library(streamMetabolizer)
+Eno.lon <- Enodat[[2]]$lon ##picking longitude value from sites data frame(which is second data frame w/ one row and six columns)
 
 Eno.DO <- Enodat[[1]] %>%
   spread(value = value, key = variable) %>%
   mutate(DateTime_Solar = convert_UTC_to_solartime(DateTime_UTC, Eno.lon))
+```
+>With high frequency data, you need to take the time zone that the data is in into account
+Again a lot of data from USGS comes in UTC data. Having a local time is important. The above function converts UTC to local solar time. It requires your UTC date time and your longitude. 
 
+```{r, fig.width==14, fig.height=3}
+library(ggplot2)
 ggplot(Eno.DO, aes(x = DateTime_Solar, y = DO_mgL)) + geom_line()
 ```
+
 
 In a nutshell, the package uses a Bayesian statistical approach to fit the following model to the data: 
 
@@ -169,7 +244,8 @@ $\frac{dO_2}{dt} = P_t + R_t + D_t$
 
 What are P~t~, R~t~ and D~t~? What are these parameters functions of?
 
->
+>P is productivity, R is respiration, and D=dissolved oxygen
+Higher flow mixes the water more and aerates the water more. Productivity will increase oxygen concentrations. When oxygen concentrations increase during daytime, so productivity happens during daytime. Respiration occurs all of the time, we consider it constant over the course of a day. We then can fit our data to the above model. 
 
 
 Visit https://data.streampulse.org/ 
@@ -193,7 +269,7 @@ On the righthand site you will see a kernel density plot. A kernel density plot 
 
 Is GPP or ER greater? Does this change at different parts of the year or between years? What is the range of dissolved oxygen (DO) found in the site? 
 
->
+>If data falls above 1:1 line, then the stream is GPP heavy. If data falls below 1:1 line, then stream is ER heavy. Because most of the data false, below, there is more ER, so this stream is a net consumer of carbon. 
 
 For some sites you can overlay data about other factors over the DO data. Play around with that and see if you can find any relationships. 
 
@@ -203,6 +279,8 @@ Is DO higher when it is warmer or colder? What happens after a flood (times when
 
 
 Now, we will look at the distributions of GPP & ER from all the sites. Go back to `Visualize` in the upper navigation bar. Select `Compiled model results` then `Overall GPP vs. ER (kernel density)` from the upper bar. You will see a kernel density plot of all GPP and ER estimates from all days across all the sites in the data base. 
+
+
 
 Are most streams autotrophic or heterotrophic? Note that in this database, all GPP values are positive and all ER values are negative, but the magnitudes of the numbers are comparable.
 

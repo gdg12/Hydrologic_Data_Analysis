@@ -24,7 +24,7 @@ High frequency data is usually defined as frequencies significantly lower than d
 
 ## Session Set Up
 
-```{r, message = FALSE}
+```{r, message = FALSE, warning=FALSE}
 getwd()
 install.packages("EcoHydRology")
 packages <- c(
@@ -39,6 +39,8 @@ theme_set(theme_classic(base_size = 12))
 
 ### Third Fork Creek
 ```{r}
+library(tidyr)
+library(dataRetrieval)
 dischargedatTFC2018 <- readNWISuv(
   site = "02097280", #Third Fork Creek at Woodcroft Parkway Near Blands NC
   parameterCd = "00060",
@@ -50,6 +52,8 @@ dischargedatTFC2018 <- readNWISuv(
 
 ### Ellerbe Creek 
 ```{r}
+library(tidyr)
+library(dataRetrieval)
 dischargedatEC2018 <- readNWISuv(
   site = "0208675010", #Ellerbe Creek at Club Boulevard at Durham, NC
   parameterCd = "00060", 
@@ -58,8 +62,7 @@ dischargedatEC2018 <- readNWISuv(
   ) %>% 
   renameNWISColumns()
 ```
->Flow_Inst is instantaenous flow values
-we also have a tz_cd-->time zone code
+>Flow_Inst is instantaenous flow values. We also have a tz_cd-->time zone code
 
 
 ### Look at structure of DF
@@ -68,14 +71,14 @@ str(dischargedatEC2018)
 ```
 >Date is in POSIXct format. No matter what part of country you pull data from, the time will be given to us in UTC-->Universal Time Coordinated. This allows us to have a standardized unit for all of the data points being taken, and we won't have to worry if the USGS uses daylight saving times in their data collection. 
 
->We'll be using high frequency data for our projects
+>We'll be using high frequency data for our projects.
 
->We want to separate baseflow from quickflow. Baseflow (also called drought flow, groundwater recession flow, low flow, low-water flow, low-water discharge and sustained or fair-weather runoff) is the portion of streamflow delayed shallow subsurface flow. It should not be confused with groundwater flow. Quickflow is the part of a storm rainfall which moves quickly to a stream channel via surface runoff or interflow, and forms a flood wave in the channel. 
+>We want to separate baseflow from quickflow. Baseflow (also called drought flow, groundwater recession flow, low flow, low-water flow, low-water discharge and sustained or fair-weather runoff) is the portion of streamflow delayed shallow subsurface flow. It should not be confused with groundwater flow. Quickflow is the part of a storm rainfall which moves quickly to a stream channel via surface runoff or overland flow, and forms a flood wave in the channel. 
 
->How does water enter the river channel
+>How does water enter the river channel?
 -overland flow (could be flowing over the ground into a drain, which flows into a pipe and eventually into a stream)
 -groundwater (aquifers at different depths will drain into streams at different rates)
--fall into the river channel 
+-Precipitation falling directly into the river channel 
 
 ## Plot Ellerbe and Third Fork Creek Discharge
 ```{r}
@@ -91,7 +94,7 @@ plot_grid(
   ncol = 1
 )
 ```
->Storms are visualized by peaks of discharge in the  plot. Rising limb=when the peak increases rapidly-->this is a combination of overland flow plus water that has been flowing through the ground
+>Storms are visualized by peaks of discharge in the  plot. Rising limb=when the peak increases rapidly-->this is a combination of overland flow plus water that has been flowing through the ground.
 >Baseflow are the troughs-->higher in the winter and early spring, lower in the summer, and then increases again in the fall. 
 
 The shape and size of river hydrographs following rain events can tell us how water moves through a watershed. Once rain falls, how does water get to a stream? What would the streamflow do?
@@ -102,32 +105,36 @@ The shape and size of river hydrographs following rain events can tell us how wa
 _"Hydrograph separation is one of the most desperate analysis techniques in use in hydrology" - Hewlett & Hibbert 1967_
 
 ## Baseflow Separation Function
-```{r baseflowseparation}
+```{r baseflowseparation, message=FALSE, warning=FALSE}
+library(EcoHydRology)
 TFCbaseflow <- BaseflowSeparation(
   dischargedatTFC2018$Flow_Inst, ###instantaneous discharge flow
   filter_parameter = 0.925, 
   passes = 3
   )
 ```
->This function reads streamflow dataset and produce a baseflow dataset. Output is a 2 column dataframe with nrow=length of input streamflow data. Passes=The number of times you want the filter to pass over your data. 
+>The BaseflowSeparation function reads a streamflow dataset and produce a baseflow dataset. Output is a 2 column dataframe with nrow=length of input streamflow data. Passes=The number of times you want the filter to pass over your data (1, 2, or 3). 
 >bf=baseflow, qf=quickflow
 
 ```{r}
 TFC2018 <- cbind(dischargedatTFC2018, TFCbaseflow)
 ```
 
-# Plot of Third 
-```{r}
+# Plot of Third Fork Creek to show that Line graphs are bad for this data
+```{r, message=FALSE, warning=FALSE, fig.width=7}
+library(ggplot2)
 ggplot(TFC2018, aes(x = dateTime, y = Flow_Inst)) + 
   geom_line() +
-   scale_y_log10() +
+   #scale_y_log10() +
   geom_line(mapping = aes(x = dateTime, y = bt), color = "darkorange4") +
   geom_line(mapping = aes(x = dateTime, y = qft), color = "steelblue4")
 ```
->If there's no storm , it averages 0 for the quick flow portion. This is a bad represtion. 
+>If there's no storm , it averages 0 for the quick flow portion. This is a bad representation. 
 
 ## Dygraph of Third Fork Creek 
-```{r}
+```{r, message=FALSE}
+library(dygraphs)
+library(xts)
 dygraph(
   cbind(
     Flow = with(TFC2018, xts(Flow_Inst, order.by = dateTime)), 
@@ -137,20 +144,21 @@ dygraph(
   ) %>% 
   dyRangeSelector()
 ```
->Quickflow is the overland flow that goes directly to the stream channel. This arrives in the stream before groundwater percolating through soil  to get to the stream=baseflow. This is why quickflow gets to the stream instanenously. 
+>Quickflow is the overland flow that goes directly to the stream channel. This arrives in the stream before groundwater percolating through soil to get to the stream=baseflow. This is why quickflow gets to the stream instanenously. 
 >9/17/2018-The sept 16 storm event raised baseflow-->groundwater tables higher than normal that are contributing to the stream. The quickflow portion is smaller than baseflow and total flow. 
 >Sept 17 event-->There's more water getting to stream by way of quickflow, since the area under the curve for quickflow is bigger. Impermeable surfaces leads to more overland flow(quickflow) in the streams. 
 
 ```{r}
-diff(TFC2018$dateTime)
+#diff(TFC2018$dateTime)
 ```
 >Wheb you make POSIXC a numeric value, it's a number of seconds since some point in time
 
 
 # Calculate how much water came out as quickflow and how much water came out as baseflow
-```{r}
+```{r, warning=FALSE, message=FALSE}
+library(dplyr)
 Export <- TFC2018 %>%
-  mutate(timestep = c(diff(as.numeric(dateTime)), NA_real_), #find out time difference btwn each of the timestamps, Most timestamps are 15 min but there are a couple gaps. 
+  mutate(timestep = c(diff(as.numeric(dateTime)), NA_real_), #find out step btwn each of the timestamps, Most timestamps are 15 min but there are a couple gaps. 
          baseflowexport = bt * timestep,
          quickflowexport = qft * timestep) %>% #ft^3/sec * seconds elapsed to just get the volume
 
@@ -160,8 +168,6 @@ Export <- TFC2018 %>%
   
 ```
 >Datetime is in POSIXCT format. 
-
-
 
 
 What percentage of water is exported from this watershed as baseflow? What percentage as quickflow?
@@ -178,15 +184,16 @@ Export$QuickflowExport_cf/Export$TotalExport_cf*100
 > It's about a 50/50 split, but we have a little more baseflow coming into Third Fork Creek. 
 
 # Repeat this analysis for Ellerbe Creek. How do the percentages compare?
-```{r}
 
+## Baseflow Separation Function
+```{r}
 Ellerbebaseflow <- BaseflowSeparation(
   dischargedatEC2018$Flow_Inst, 
   filter_parameter = 0.925, 
   passes = 3)
 ```
 
-
+### Bind Ellerbe Data Frame to Ellerbe Baseflow/Quickflow dataframe
 ```{r}
 EC2018 <- cbind(dischargedatEC2018, Ellerbebaseflow)
 
@@ -214,17 +221,17 @@ ExportEllerbe$QuickflowExport_cf/ExportEllerbe$TotalExport_cf*100
 
 What does this mean physically about the watershed?
 
->Ellerbe Creek has more quickflow, but TC Creek has more baseflow.This, Ellerbe Creek has more overland flow. EC might have more urban surfaces, roads, houses, while TC Creek might have more open area.They both are urban streams, however.  
+>Ellerbe Creek has more quickflow, but TC Creek has more baseflow. Thus, Ellerbe Creek has more overland flow. EC might have more urban surfaces, roads, houses, while TC Creek might have more open area.They both are urban streams, however.  
 
 
 # Hydrologic Flashiness
 
 A "flashy" stream increases in stormflow much faster following a precipitation event. Flashiness is how responsive a stream is to precipitation. 
-Factors that contribute to flashiness: quickflow
+Flashiness is an important characteristic of the stream hydrologic regime. A "flashy" stream is one that experiences a rapid increase in flow shortly after onset of a precipitation event, and an equally rapid return to base conditions shortly after the end of the precipitation event. Flashiness in a stream can be increased or decreased by a variety of land use/land cover changes in the stream's watershed. For example, an increase in impervious surfaces (urbanization) or agricultural land typically leads to an increase in flashiness. Land management practices that increase infiltration of precipitation into the soil, such as restoration of native vegetation, or implementation of best management practices like rain gardens, grass swales, and forested riparian buffers, typically decrease stream flashiness. Streams that experience an increase in flashiness will undergo a period of channel adjustment to accommodate the increased peak flows. This may include incision (downcutting) and widening of the stream channel, which affects in-stream and near-stream infrastructure as well as stream-adjacent lands.
 
 Refering to our previous work with baseflow separation, would you expect flashiness to increase or decrease with urbanization?
 
-> Flashiness would increase with urbanization-->more impervious surfaces in urban areas means more overland flow. 
+> Flashiness would increase with urbanization-->more impervious surfaces in urban areas means more overland flow. Flashiness would also increase with agricultural land. 
 
 What do you think "urban stream syndrome" refers to?
 
@@ -232,8 +239,7 @@ What do you think "urban stream syndrome" refers to?
 
 The Richards-Baker Index is an quantitative index of how flashy a stream is. It is calculated as 
 $$RBI = (\sum_{j = 1}^n |Q_j - Q_{j-1}| / \sum_{j = 1}^n Q_j) / Catchment Area$$
-
->Q is flow, j is time stamp 1. The first time stamp of the whole series is  0, and we'll start at time stamp 1. 
+>Q is flow, j is time stamp 1. The first time stamp of the whole series is 0, and we'll start at time stamp 1. 
 
 ### Pull in Metadata for Third Fork Creek
 ```{r Flashiness}
@@ -242,7 +248,7 @@ TFC.catchment.size <- TFCsitedata$drain_area_va #square miles
 
 ```
 >Smaller catchment areas are flashier because it takes less time fro water to reach the stream. Bigger catchment area will have less immediate changes than a smaller catchment. 
->drain_area_va is the catchment size
+>drain_area_va is the catchment size in square miles
 
 ## Calculate Flashiness Index Value of Third Fork Creek 
 ```{r}
@@ -253,6 +259,7 @@ RBI_TFC2018 <- (
 ```
 >Flashiness Index Value of 0.00303
 
+## Calculate Flashiness Index Value of Ellerbe Creek
 ```{r}
 library(dataRetrieval)
 ECsitedata <- readNWISsite(site = "0208675010")
@@ -260,7 +267,7 @@ EC.catchment.size <- ECsitedata$drain_area_va #square miles
 
 ```
 
-## Calculate Flashiness Index of Ellerbe Creek 
+
 ```{r}
 RBI_EC2018 <- (
   sum(abs(diff(dischargedatEC2018$Flow_Inst))) / 
