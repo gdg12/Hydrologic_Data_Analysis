@@ -5,7 +5,7 @@ date: "Fall 2019"
 output: pdf_document
 geometry: margin=2.54cm
 editor_options: 
-  chunk_output_type: console
+  chunk_output_type: inline
 ---
 
 ## Lesson Objectives
@@ -16,6 +16,8 @@ editor_options:
 ## Opening Discussion
 
 What are some examples of spatial data in the aquatic sciences? Why might you want to map these?
+>Catchment characteristics in order to map out flow paths
+>Looking at depth and flow of rivers and how that would impact species
 
 ## Spatial visualization
 
@@ -23,14 +25,14 @@ The geometry of a given spatial data point consists of coordinates in 2-, 3-, or
 
 * **x**: longitude (required)
 * **y**: latitude (required)
-* **z**: altitude (optional)
-* **m**: measurement (optional)
+* **z**: altitude (optional)-to map slopes that influence flow paths
+* **m**: measurement (optional). let's say we sample one point. We could represent the discharge at that time by color. This could be any quantitative or qualitative measurement. 
 
 A feature (object) most often falls into one of these three categories (more complex examples exist; see the `sf` package documentation for more): 
 
-* **Point** <add notes here>
-* **Line** <add notes here>
-* **Polygon** <add notes here>
+* **Point** <Used for discrete data points with geographic coordinates of latitude and longitude. Can't measure line or area. Examples are sampling locations, a city, a house, etc>
+* **Line** <One dimension, used to represent length. Polyline, a watershed border (lines are good for connectivity between points, streets, rivers, etc). You could have a vector going in one direction, but 
+* **Polygon** <At least three line segments connected that are closed. Simplest polygon is a triangle. Larger spatial areas like county boundaries, quadrants boundaries, or state boundaries.>
 
 
 ## Mapping in R
@@ -46,7 +48,7 @@ We will be using the `sf` ("simple features") package today. A helpful vignette 
 
 ## Session Set Up
 
-```{r, message = FALSE}
+```{r, message = FALSE, warning=FALSE}
 getwd()
 
 library(tidyverse)
@@ -56,8 +58,14 @@ library(LAGOSNE)
 library(sf)
 library(maps)
 library(gganimate)
+library(rgeos)
+library(maps)
+library(gifski)
+library(png)
+library(transformr)
 
-theme_set(theme_classic())
+
+
 options(scipen = 100)
 
 # Load LAGOSNE data into R session
@@ -67,26 +75,52 @@ LAGOSdata <- lagosne_load()
 
 
 ```
+
+### Set theme
+```{r}
+gabytheme <- theme_bw(base_size = 22) + 
+  theme(plot.title=element_text(face="bold", size="29", color="IndianRed3", hjust=0.5),
+        axis.title=element_text(size=22, color="black"),
+axis.text = element_text(face="bold", size=18, color = "black"), 
+panel.background=element_rect(fill="white", color="darkblue"), 
+panel.border = element_rect(color = "black", size = 2),
+legend.position = "top", legend.background = element_rect(fill="white", color="black"),
+            legend.key = element_rect(fill="transparent", color="NA"))
+
+theme_set(gabytheme)
+```
+
 ## Generating spatial data frames
 
 We will be using the `st_as_sf` function today, which converts an object to a simple features object. Notice in the "states" object contains a column called "geometry", which contains a list of coordinates. Notice each cell in this column is a list, which can be expanded to look at the different coordinates used to draw a polygon. We plot the polygons with the `geom_sf` function. 
 
 ```{r}
 # generate a map of U.S. states
-states <- st_as_sf(map(database = "state", plot = TRUE, fill = TRUE, col = "white"))
+library(rgeos)
+states <- st_as_sf(map(database = "state", plot = TRUE, fill = TRUE, col = "white")) ##converts data frame to a simple features object. 
+```
+>plot=true, You can adjust fill and color. 
+For Arkansas, it takes 312 line segments to draw Arkansas. 
+It takes 79 line segments to draw Colorado. 
 
 # filter only states that are included in the LAGOSNE database
+```{r}
 states.subset <- filter(states, ID %in% 
                           c("minnesota", "iowa", "wisconsin", "illinois",
                             "missouri", "michigan", "indiana", "ohio",
                             "pennsylvania", "new york", "new jersey",
                             "connecticut", "new hampshire", "rhode island",
                             "massachusetts", "vermont", "maine"))
+```
+
+
 # visualize state plot
+```{r}
 LAGOSstateplot <- ggplot(states.subset) +
   geom_sf(fill = "white")
 print(LAGOSstateplot)
 ```
+>Creating a basic map of the states before plotting the LAGOS data will help us understand the LAGOS points better.
 
 ## Data wrangling
 ```{r}
@@ -95,19 +129,25 @@ LAGOSlocus <- LAGOSdata$locus
 LAGOSstate <- LAGOSdata$state
 LAGOSnutrient <- LAGOSdata$epi_nutr
 LAGOSlimno <- LAGOSdata$lakes_limno
+```
 
 # Create a data frame to visualize secchi depth
+```{r}
 LAGOScombined <- 
-  left_join(LAGOSnutrient, LAGOSlocus) %>%
-  left_join(., LAGOSlimno) %>%
+  left_join(LAGOSnutrient, LAGOSlocus) %>%##Locus gives us latitude and longitude (nutrient doesn't have coordinates)
+  left_join(., LAGOSlimno) %>% ##R can choose the primary key column to join by
   left_join(., LAGOSstate) %>%
-  filter(!is.na(state)) %>%
+  filter(!is.na(state)) %>% #remove NA values from state column
   select(lagoslakeid, sampledate, secchi, lake_area_ha, maxdepth, nhd_lat, nhd_long, state)
 ```
+
 
 Notice that in the absence of specifying specific columns to join by, the `left_join` function will choose columns itself. The resulting data frame has the same amount of rows as the LAGOSnutrient data frame, minus any observations that listed state as NA. Be careful when relying on this functionality! Always double check your final data frame to make sure it contains the correct data and that your joins have proceeded as planned.
 
 Let's create a new data frame of average secchi depth for each lake. Notice that in the `summarise` function (also can use `summarize`) we also compute the "mean" of max depth, latitude, and longitude for each lake. These should all be the same for every observation at a given lake, so taking the mean just uses that one value.
+
+>Take any lake with a secchi depth measurement-take mean secchi depth measuremnt for each lake and map it.
+
 ```{r}
 secchi.summary <- LAGOScombined %>%
   group_by(lagoslakeid) %>%
@@ -118,6 +158,7 @@ secchi.summary <- LAGOScombined %>%
             long = mean(nhd_long)) %>%
   drop_na()
 ```
+>Why do we summarize area, depth, lat, and long? This function creates a whole new data frame, and tell it to take the mean lake area. This aggregates data and gives us just one row for each lake ID. 
 
 ## A Word on Projections
 
@@ -125,13 +166,15 @@ The Earth is round, meaning that if we want to make a map in 2d space we need to
 
 For today, we will use the EPSG projection 4326, also known by WGS 84. This projection is the reference system for the Global Positioning System (GPS) and functions well for the LAGOSNE database.
 
+>We have lat and long columns in our secchi.summary dataframe. 
+
 ## Plotting secchi depths across LAGOSNE lakes
-```{r}
-secchi.spatial <- st_as_sf(secchi.summary, coords = c("long", "lat"), crs = 4326)
+```{r, fig.width=6}
+secchi.spatial <- st_as_sf(secchi.summary, coords = c("long", "lat"), crs = 4326)  #crs=projection 
 
 Secchiplot <- ggplot() +
   geom_sf(data = states.subset, fill = "white") +
-  geom_sf(data = secchi.spatial, aes(color = secchi.mean), 
+  geom_sf(data = secchi.spatial, aes(color = secchi.mean), #secchi depth data points will be on top of states boundaries in this order
           alpha = 0.5, size = 1) +
   scale_color_viridis_c() +
   labs(color = "Average Secchi Depth (m)") +
@@ -139,6 +182,8 @@ Secchiplot <- ggplot() +
 print(Secchiplot)
 
 ```
+>Most of our points are purple or dark blue-secchi depth is low for most points. 
+
 
 ## Secchi depth mapping challenge. 
 Your turn! Notice that Maine has a large number of lakes with secchi depth measurements as well as a large range in secchi depth. Let's zoom in on this state for a closer look. 
@@ -146,13 +191,31 @@ Your turn! Notice that Maine has a large number of lakes with secchi depth measu
 1. Filter the states and secchi depth datasets so that they contain Maine only. For the secchi depth dataset, create a summary dataset with just the mean secchi depth. 
 
 ```{r}
+Maine<-filter(LAGOScombined, state=="ME")
+MaineSpatial<-left_join(Maine, secchi.spatial, by="lagoslakeid")%>%drop_na()
+```
 
+## Secchi Summary with just mean
+```{r}
+secchi.spatialmean<-secchi.spatial%>%summarise(secchi.meanfinal=mean(secchi.mean))
+```
+
+geom_sf(data = states.subset, fill = "white") +
+  geom_sf(data = secchi.spatial, aes(color = secchi.mean), #secchi depth data points will be on top of states boundaries in this order
+  
+```{r}
+Mainestates.subset<-filter(states.subset, ID=="maine")
 ```
 
 2. Create a plot of mean secchi depth for lakes in Maine, with mean secchi depth designated as color and the lake area as the size of the dot. Remember that you are using size in the aesthetics and should remove the size = 1 from the other part of the code. Adjust the transparency of points as needed.
 
 ```{r}
-
+MainePlot<-ggplot() +
+  geom_sf(data = Mainestates.subset, color='white',size=2) +
+    geom_sf(data = MaineSpatial, aes(color = secchi.mean), #secchi depth data points will be on top of states boundaries in this order
+          alpha = 0.5, size = 1)
+  scale_fill_gradient(low="yellow", high="darkgreen")
+print(MainePlot)
 ```
 
 3. Create a second plot, but this time use maximum depth of the lake as the size of the dot. 
@@ -174,24 +237,35 @@ Your turn! Notice that Maine has a large number of lakes with secchi depth measu
 ## Visualizing secchi depth over time
 
 We might want to visualize how monitoring efforts and secchi depths have changed over time. Below we will divide each secchi depth measurement by the decade in which it was taken (this can be an effective way to reduce long time series). 
-```{r}
+
 # add a "decade" column 
+```{r}
 LAGOScombined <- LAGOScombined %>%
   mutate(decade = floor_date(sampledate, years (10)),
          decade = year(decade))
+```
 
 # create a new summary data frame, with each lake divided by decade
+```{r}
 secchi.summary.decade <- LAGOScombined %>%
   group_by(lagoslakeid, decade) %>%
   summarise(secchi.mean = mean(secchi),
             lat = mean(nhd_lat), 
             long = mean(nhd_long)) %>%
   drop_na()
+```
+
+
 
 # create a simple features object
+```{r}
 secchi.decade.spatial <- st_as_sf(secchi.summary.decade, coords = c("long", "lat"), crs = 4326)
+```
+
+
 
 # plot the data with decades as separate facets
+```{r}
 Secchiplot <- ggplot() +
   geom_sf(data = states.subset, fill = "white") +
   geom_sf(data = secchi.decade.spatial, aes(color = secchi.mean), 
@@ -202,6 +276,8 @@ Secchiplot <- ggplot() +
   theme(legend.position = "top")
 print(Secchiplot)
 ```
+
+
 
 Faceting can be an effective way to visualize data over time. But, R has additional functionality that we can visualize these changes over time in one single graph, with the package `gganimate`. Let's build an animated plot and create a GIF. 
 
